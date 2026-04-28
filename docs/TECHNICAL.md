@@ -4,7 +4,7 @@
 
 | SSMS Version | VS Shell | Bitness | .NET Target | Status |
 |---|---|---|---|---|
-| SSMS 22 (current) | VS 2022 | 64-bit | .NET Framework 4.8 | Supported |
+| SSMS 22 (current) | VS 2026 | 64-bit | .NET Framework 4.8 | Supported |
 
 SSMS 22 requires .NET Framework 4.8 to run. SSMS has not migrated to modern .NET.
 
@@ -23,19 +23,20 @@ The solution contains three projects:
 
 ```
 StatisticsParserExtension.sln
-├── StatisticsParser.Core/    # .NET Standard 2.0 class library
-│   ├── Models/               # IResultRow, IoRow, IoGroup, TimeRow, etc.
-│   ├── Parsing/              # ParseData, DetermineRowType, ParserLanguage, etc.
-│   └── Formatting/           # ms → hh:mm:ss.ms, percent formatting
-│
-├── StatisticsParser.Tests/   # xUnit test project, targets net8.0
-│   └── Parsing/              # Parser unit tests
-│
-└── StatisticsParser.Vsix/    # VSIX targeting SSMS 22 (64-bit, VS2022 shell)
-    ├── Commands/             # Context menu command handlers
-    ├── Windows/              # Tool window (ToolWindowPane subclass)
-    ├── Controls/             # WPF UserControls (results view)
-    └── source.extension.vsixmanifest
+└── source/
+    ├── StatisticsParser.Core/    # .NET Standard 2.0 class library
+    │   ├── Models/               # IResultRow, IoRow, IoGroup, TimeRow, etc.
+    │   ├── Parsing/              # ParseData, DetermineRowType, ParserLanguage, etc.
+    │   └── Formatting/           # ms → hh:mm:ss.ms, percent formatting
+    │
+    ├── StatisticsParser.Tests/   # xUnit test project, targets net8.0
+    │   └── Parsing/              # Parser unit tests
+    │
+    └── StatisticsParser.Vsix/    # VSIX targeting SSMS 22 (64-bit, VS2026 shell)
+        ├── Commands/             # Context menu command handlers
+        ├── Windows/              # Tool window (ToolWindowPane subclass)
+        ├── Controls/             # WPF UserControls (results view)
+        └── source.extension.vsixmanifest
 ```
 
 `StatisticsParser.Core` targets .NET Standard 2.0, which is compatible with both the .NET Framework 4.8 VSIX host and the .NET 8 test project. All parsing and data model logic lives here; the VSIX project contains only SSMS integration code and WPF UI.
@@ -221,7 +222,7 @@ The tool window respects the active SSMS color theme (light/dark/blue) by bindin
 
 ## Build & Packaging
 
-A single VSIX targets SSMS 22 (64-bit, VS 2022 shell). CI produces one release artifact:
+A single VSIX targets SSMS 22 (64-bit, VS 2026 shell). CI produces one release artifact:
 
 | Artifact | Target |
 |---|---|

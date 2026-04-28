@@ -4,7 +4,7 @@
 
 Build a SSMS 22 extension from scratch. The repo currently contains only documentation. The extension reads the Messages tab output, parses `STATISTICS IO` / `STATISTICS TIME` output, and renders parsed results in a dockable WPF tool window.
 
-Phases 1–6 (Core + Tests) run on any OS. Phases 7–11 require Windows with VS 2022 and SSMS 22.
+Phases 1–6 (Core + Tests) run on any OS. Phases 7–11 require Windows with VS 2026 and SSMS 22.
 
 ---
 
@@ -38,7 +38,7 @@ Build configs: `Debug|x64` and `Release|x64` for Vsix; `AnyCPU` for Core and Tes
 
 ## Phase 2 — Core Models & Enums
 
-All files in `StatisticsParser.Core/Models/`:
+All files in `source/StatisticsParser.Core/Models/`:
 
 **Enums**
 - `RowType.cs` — `None, IO, ExecutionTime, CompileTime, RowsAffected, Error, IOTotal, ExecutionTimeTotal, CompileTimeTotal, Info, CompletionTime`
@@ -63,13 +63,13 @@ All files in `StatisticsParser.Core/Models/`:
 - `ParseResultTotal.cs` — `TimeTotal ExecutionTotal`, `TimeTotal CompileTotal`, `IoGrandTotal IoTotal`
 - `IoGrandTotal.cs` — `List<IoColumn> Columns`, `List<IoGroupTotal> Data` (per table, sorted alpha), `IoGroupTotal Total`
 
-**Verification**: `dotnet build StatisticsParser.Core` compiles.
+**Verification**: `dotnet build source/StatisticsParser.Core` compiles.
 
 ---
 
 ## Phase 3 — Parser Language
 
-`StatisticsParser.Core/Parsing/ParserLanguage.cs`
+`source/StatisticsParser.Core/Parsing/ParserLanguage.cs`
 
 Properties covering all locale-sensitive strings from TECHNICAL.md §4 (Language Support table). Static `ParserLanguage.English` singleton. Includes `IoColumn DetermineIoColumn(string token)` method for mapping column header tokens to `IoColumn` enum values.
 
@@ -77,7 +77,7 @@ Properties covering all locale-sensitive strings from TECHNICAL.md §4 (Language
 
 ## Phase 4 — Parser Engine
 
-`StatisticsParser.Core/Parsing/Parser.cs`
+`source/StatisticsParser.Core/Parsing/Parser.cs`
 
 **Public API**: `public static ParseResult ParseData(string text, ParserLanguage lang)`
 
@@ -111,17 +111,17 @@ Zero-column suppression: columns where every row in the group is zero are exclud
 
 ## Phase 5 — Formatting Utilities
 
-`StatisticsParser.Core/Formatting/TimeFormatter.cs`
+`source/StatisticsParser.Core/Formatting/TimeFormatter.cs`
 - `public static string FormatMs(int ms)` → `"hh:mm:ss.fff"` (e.g. `959` → `"00:00:00.959"`)
 
-`StatisticsParser.Core/Formatting/PercentFormatter.cs`
+`source/StatisticsParser.Core/Formatting/PercentFormatter.cs`
 - `public static string FormatPercent(double value)` → `"100.000%"` (3 decimal places)
 
 ---
 
 ## Phase 6 — Unit Tests
 
-`StatisticsParser.Tests/Parsing/ParserTests.cs`
+`source/StatisticsParser.Tests/Parsing/ParserTests.cs`
 
 Test inputs and expected values taken directly from FUNCTIONAL.md examples:
 
@@ -148,10 +148,10 @@ Test inputs and expected values taken directly from FUNCTIONAL.md examples:
 2. Discover Messages tab context menu GUID via SSMS SDK docs, devenv command table inspection, or SSMS extension samples.
 
 ### Files to create
-- `StatisticsParser.Vsix/source.extension.vsixmanifest` — identity, version, VS 2022 shell prerequisite
-- `StatisticsParser.Vsix/StatisticsParser.vsct` — command group GUID + command ID; placement in Messages tab context menu
-- `StatisticsParser.Vsix/Commands/StatisticsParserPackage.cs` — `AsyncPackage` subclass with `[PackageRegistration]`, `[ProvideMenuResource]`, `[ProvideToolWindow]` attributes; `InitializeAsync` registers command and tool window
-- `StatisticsParser.Vsix/Commands/ParseStatisticsCommand.cs` — `Execute` handler: capture → parse → show window
+- `source/StatisticsParser.Vsix/source.extension.vsixmanifest` — identity, version, VS 2026 shell prerequisite
+- `source/StatisticsParser.Vsix/StatisticsParser.vsct` — command group GUID + command ID; placement in Messages tab context menu
+- `source/StatisticsParser.Vsix/Commands/StatisticsParserPackage.cs` — `AsyncPackage` subclass with `[PackageRegistration]`, `[ProvideMenuResource]`, `[ProvideToolWindow]` attributes; `InitializeAsync` registers command and tool window
+- `source/StatisticsParser.Vsix/Commands/ParseStatisticsCommand.cs` — `Execute` handler: capture → parse → show window
 
 **Verification**: VSIX loads in SSMS 22 experimental instance; "Parse Statistics" appears in Messages tab right-click menu.
 
@@ -159,7 +159,7 @@ Test inputs and expected values taken directly from FUNCTIONAL.md examples:
 
 ## Phase 8 — Messages Tab Content Capture
 
-`StatisticsParser.Vsix/Commands/MessagesTabReader.cs`
+`source/StatisticsParser.Vsix/Commands/MessagesTabReader.cs`
 
 ```csharp
 public static string GetMessagesText(IServiceProvider serviceProvider)
@@ -179,8 +179,8 @@ Steps:
 ## Phase 9 — Tool Window & WPF UI
 
 **Shell**
-- `StatisticsParser.Vsix/Windows/StatisticsParserToolWindow.cs` — `ToolWindowPane` subclass hosting `StatisticsParserControl`
-- `StatisticsParser.Vsix/Controls/StatisticsParserControl.xaml` + `.xaml.cs` — `ScrollViewer > StackPanel`; public `Render(ParseResult result)` method
+- `source/StatisticsParser.Vsix/Windows/StatisticsParserToolWindow.cs` — `ToolWindowPane` subclass hosting `StatisticsParserControl`
+- `source/StatisticsParser.Vsix/Controls/StatisticsParserControl.xaml` + `.xaml.cs` — `ScrollViewer > StackPanel`; public `Render(ParseResult result)` method
 
 **Rendering each `IResultRow` type** (in `Data` order):
 
@@ -230,10 +230,10 @@ PercentRead → "% Logical Reads of Total Reads"
 `.github/workflows/build.yml` on `windows-latest`:
 
 1. Checkout
-2. Setup MSBuild (VS 2022)
+2. Setup MSBuild (VS 2026)
 3. `nuget restore`
-4. `dotnet test StatisticsParser.Tests` — Core tests run without SSMS
-5. `msbuild StatisticsParser.Vsix /p:Configuration=Release /p:Platform=x64`
+4. `dotnet test source/StatisticsParser.Tests` — Core tests run without SSMS
+5. `msbuild source/StatisticsParser.Vsix /p:Configuration=Release /p:Platform=x64`
 6. Upload `StatisticsParser.vsix` as build artifact
 
 **Verification**: GitHub Actions run produces green build and downloadable VSIX artifact.
@@ -254,36 +254,37 @@ PercentRead → "% Logical Reads of Total Reads"
 
 ```
 StatisticsParserExtension.sln
-StatisticsParser.Core/
-  StatisticsParser.Core.csproj
-  Models/
-    RowType.cs, IoColumn.cs, IResultRow.cs
-    IoRow.cs, IoGroupTotal.cs, IoGroup.cs
-    TimeRow.cs, TimeTotal.cs
-    RowsAffectedRow.cs, ErrorRow.cs, InfoRow.cs, CompletionTimeRow.cs
-    ParseResult.cs, ParseResultTotal.cs, IoGrandTotal.cs
-  Parsing/
-    ParserLanguage.cs
-    Parser.cs
-  Formatting/
-    TimeFormatter.cs
-    PercentFormatter.cs
-StatisticsParser.Tests/
-  StatisticsParser.Tests.csproj
-  Parsing/
-    ParserTests.cs
-StatisticsParser.Vsix/
-  StatisticsParser.Vsix.csproj
-  source.extension.vsixmanifest
-  StatisticsParser.vsct
-  Commands/
-    StatisticsParserPackage.cs
-    ParseStatisticsCommand.cs
-    MessagesTabReader.cs
-  Windows/
-    StatisticsParserToolWindow.cs
-  Controls/
-    StatisticsParserControl.xaml
-    StatisticsParserControl.xaml.cs
+source/
+  StatisticsParser.Core/
+    StatisticsParser.Core.csproj
+    Models/
+      RowType.cs, IoColumn.cs, IResultRow.cs
+      IoRow.cs, IoGroupTotal.cs, IoGroup.cs
+      TimeRow.cs, TimeTotal.cs
+      RowsAffectedRow.cs, ErrorRow.cs, InfoRow.cs, CompletionTimeRow.cs
+      ParseResult.cs, ParseResultTotal.cs, IoGrandTotal.cs
+    Parsing/
+      ParserLanguage.cs
+      Parser.cs
+    Formatting/
+      TimeFormatter.cs
+      PercentFormatter.cs
+  StatisticsParser.Tests/
+    StatisticsParser.Tests.csproj
+    Parsing/
+      ParserTests.cs
+  StatisticsParser.Vsix/
+    StatisticsParser.Vsix.csproj
+    source.extension.vsixmanifest
+    StatisticsParser.vsct
+    Commands/
+      StatisticsParserPackage.cs
+      ParseStatisticsCommand.cs
+      MessagesTabReader.cs
+    Windows/
+      StatisticsParserToolWindow.cs
+    Controls/
+      StatisticsParserControl.xaml
+      StatisticsParserControl.xaml.cs
 .github/workflows/build.yml
 ```
