@@ -4,7 +4,8 @@
       "Bash(where dotnet *)",
       "Bash(dotnet --list-sdks)",
       "PowerShell(dotnet test source/StatisticsParser.Core.Tests 2>&1)",
-      "WebFetch(domain:raw.githubusercontent.com)"
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "PowerShell(dotnet test .\\\\source\\\\StatisticsParser.Core.Tests\\\\StatisticsParser.Core.Tests.csproj)"
     ]
   }
 }
