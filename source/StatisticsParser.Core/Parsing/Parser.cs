@@ -46,9 +46,9 @@ public static class Parser
                 RegexOptions.IgnoreCase)
         };
 
-        for (ctx.I = 0; ctx.I < ctx.Lines.Length; ctx.I++)
+        for (ctx.LineIndex = 0; ctx.LineIndex < ctx.Lines.Length; ctx.LineIndex++)
         {
-            var line = ctx.Lines[ctx.I];
+            var line = ctx.Lines[ctx.LineIndex];
             if (line.Length > 0 && line[line.Length - 1] == '\r')
                 line = line.Substring(0, line.Length - 1);
 
@@ -405,10 +405,10 @@ public static class Parser
 
     private static void HandleTimeHeader(ParseContext ctx, RowType headerType)
     {
-        if (ctx.I + 1 >= ctx.Lines.Length) return;
+        if (ctx.LineIndex + 1 >= ctx.Lines.Length) return;
 
-        ctx.I++;
-        var dataLine = ctx.Lines[ctx.I];
+        ctx.LineIndex++;
+        var dataLine = ctx.Lines[ctx.LineIndex];
         if (dataLine.Length > 0 && dataLine[dataLine.Length - 1] == '\r')
             dataLine = dataLine.Substring(0, dataLine.Length - 1);
 
@@ -452,10 +452,10 @@ public static class Parser
     private static void HandleError(ParseContext ctx, string line)
     {
         ctx.Result.Data.Add(new ErrorRow { Text = line });
-        if (ctx.I + 1 < ctx.Lines.Length)
+        if (ctx.LineIndex + 1 < ctx.Lines.Length)
         {
-            ctx.I++;
-            var detail = ctx.Lines[ctx.I];
+            ctx.LineIndex++;
+            var detail = ctx.Lines[ctx.LineIndex];
             if (detail.Length > 0 && detail[detail.Length - 1] == '\r')
                 detail = detail.Substring(0, detail.Length - 1);
             ctx.Result.Data.Add(new ErrorRow { Text = detail });
@@ -580,7 +580,7 @@ public static class Parser
     {
         public ParserLanguage Lang = null!;
         public string[] Lines = Array.Empty<string>();
-        public int I;
+        public int LineIndex;
         public ParseResult Result = null!;
         public RowType PrevRowType = RowType.None;
         public IoGroup? CurrentGroup;
