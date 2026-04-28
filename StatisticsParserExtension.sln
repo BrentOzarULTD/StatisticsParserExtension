@@ -4,7 +4,7 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StatisticsParser.Core", "source\StatisticsParser.Core\StatisticsParser.Core.csproj", "{7F1B2A0C-1A4D-4E7F-9C3A-3E9B5A5D1F0A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StatisticsParser.Tests", "source\StatisticsParser.Tests\StatisticsParser.Tests.csproj", "{3E5A1F2B-2C8D-4F0E-8A1B-9F3C5E7D2B4A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StatisticsParser.Core.Tests", "source\StatisticsParser.Core.Tests\StatisticsParser.Core.Tests.csproj", "{3E5A1F2B-2C8D-4F0E-8A1B-9F3C5E7D2B4A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StatisticsParser.Vsix", "source\StatisticsParser.Vsix\StatisticsParser.Vsix.csproj", "{9D8C7B6A-5F4E-4D3C-A2B1-A0F9E8D7C6B5}"
 EndProject

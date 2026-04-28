@@ -27,7 +27,7 @@ Create `StatisticsParserExtension.sln` with three projects:
 | Project | Target | Purpose |
 |---|---|---|
 | `StatisticsParser.Core` | `netstandard2.0` | All parsing and model logic; no external deps |
-| `StatisticsParser.Tests` | `net8.0` | xUnit tests; references Core |
+| `StatisticsParser.Core.Tests` | `net8.0` | xUnit tests; references Core |
 | `StatisticsParser.Vsix` | `net48`, x64 | SSMS extension; references Core |
 
 Build configs: `Debug|x64` and `Release|x64` for Vsix; `AnyCPU` for Core and Tests.
@@ -121,7 +121,7 @@ Zero-column suppression: columns where every row in the group is zero are exclud
 
 ## Phase 6 — Unit Tests
 
-`source/StatisticsParser.Tests/Parsing/ParserTests.cs`
+`source/StatisticsParser.Core.Tests/Parsing/ParserTests.cs`
 
 Test inputs and expected values taken directly from FUNCTIONAL.md examples:
 
@@ -232,7 +232,7 @@ PercentRead → "% Logical Reads of Total Reads"
 1. Checkout
 2. Setup MSBuild (VS 2026)
 3. `nuget restore`
-4. `dotnet test source/StatisticsParser.Tests` — Core tests run without SSMS
+4. `dotnet test source/StatisticsParser.Core.Tests` — Core tests run without SSMS
 5. `msbuild source/StatisticsParser.Vsix /p:Configuration=Release /p:Platform=x64`
 6. Upload `StatisticsParser.vsix` as build artifact
 
@@ -269,8 +269,8 @@ source/
     Formatting/
       TimeFormatter.cs
       PercentFormatter.cs
-  StatisticsParser.Tests/
-    StatisticsParser.Tests.csproj
+  StatisticsParser.Core.Tests/
+    StatisticsParser.Core.Tests.csproj
     Parsing/
       ParserTests.cs
   StatisticsParser.Vsix/

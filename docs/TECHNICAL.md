@@ -24,15 +24,15 @@ The solution contains three projects:
 ```
 StatisticsParserExtension.sln
 └── source/
-    ├── StatisticsParser.Core/    # .NET Standard 2.0 class library
+    ├── StatisticsParser.Core/         # .NET Standard 2.0 class library
     │   ├── Models/               # IResultRow, IoRow, IoGroup, TimeRow, etc.
     │   ├── Parsing/              # ParseData, DetermineRowType, ParserLanguage, etc.
     │   └── Formatting/           # ms → hh:mm:ss.ms, percent formatting
     │
-    ├── StatisticsParser.Tests/   # xUnit test project, targets net8.0
+    ├── StatisticsParser.Core.Tests/   # xUnit test project, targets net8.0
     │   └── Parsing/              # Parser unit tests
     │
-    └── StatisticsParser.Vsix/    # VSIX targeting SSMS 22 (64-bit, VS2026 shell)
+    └── StatisticsParser.Vsix/         # VSIX targeting SSMS 22 (64-bit, VS2026 shell)
         ├── Commands/             # Context menu command handlers
         ├── Windows/              # Tool window (ToolWindowPane subclass)
         ├── Controls/             # WPF UserControls (results view)
