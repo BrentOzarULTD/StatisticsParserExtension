@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(where dotnet *)",
+      "Bash(dotnet --list-sdks)",
+      "PowerShell(dotnet test source/StatisticsParser.Core.Tests 2>&1)",
+      "WebFetch(domain:raw.githubusercontent.com)"
+    ]
+  }
+}

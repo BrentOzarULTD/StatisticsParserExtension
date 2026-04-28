@@ -71,7 +71,12 @@ All files in `source/StatisticsParser.Core/Models/`:
 
 `source/StatisticsParser.Core/Parsing/ParserLanguage.cs`
 
-Properties covering all locale-sensitive strings from TECHNICAL.md §4 (Language Support table). Static `ParserLanguage.English` singleton. Includes `IoColumn DetermineIoColumn(string token)` method for mapping column header tokens to `IoColumn` enum values.
+- Properties per the table in [TECHNICAL.md §4](TECHNICAL.md) "Language Support".
+- Three static singletons: `ParserLanguage.English` (the default consumed by `ParseData` when callers don't supply one), `ParserLanguage.Spanish`, `ParserLanguage.Italian`. Values are hardcoded in C#, copied verbatim from the three upstream JSON files cited in TECHNICAL.md §4.
+- `IoColumn DetermineIoColumn(string columnText)` — case-insensitive trim-then-match against each column-variant list; returns `IoColumn.NotFound` when nothing matches.
+- Internal static `IReadOnlyList<ParserLanguage> All { get; }` — used by tests to round-trip every language; placeholder for the future auto-detect work referenced in [TODO.md](TODO.md).
+
+**Verification**: `dotnet build source/StatisticsParser.Core` compiles. (Phase 6 adds the load-everything tests.)
 
 ---
 
@@ -136,6 +141,10 @@ Test inputs and expected values taken directly from FUNCTIONAL.md examples:
 | No recognized statistics | Only `InfoRow` entries |
 | Segment reads merge | Segment values merged into last `IoRow`; no extra row added |
 | Summary row detection | Summary execution time not added to `ExecutionTotal` |
+| All language singletons load | `ParserLanguage.English/Spanish/Italian` non-null; every column-variant list non-empty; `LangValue` matches `"en"/"es"/"it"` |
+| Column name case-insensitivity | `English.DetermineIoColumn("Scan Count")` == `English.DetermineIoColumn("scan count")` == `IoColumn.Scan` |
+| Spanish smoke parse | A small Spanish input (Tabla / lecturas lógicas / Tiempo de CPU) with `ParserLanguage.Spanish` produces an equivalent `ParseResult` to the English baseline |
+| Italian smoke parse | Same test for Italian (Tabella / letture logiche / tempo di CPU) with `ParserLanguage.Italian` |
 
 **Verification**: `dotnet test` — all tests pass.
 

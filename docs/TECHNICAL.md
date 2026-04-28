@@ -154,22 +154,57 @@ ParseResult
 
 #### Language Support
 
-The parser's entry point is `ParseData(string text, ParserLanguage lang)`. The `ParserLanguage` object maps SQL Server output text to the parser's internal values, mirroring the JS `lang` parameter. This allows the parser to handle SQL Server output in any locale. An English default (`ParserLanguage.English`) is provided.
+`ParseData(string text, ParserLanguage lang)` accepts a `ParserLanguage` instance that maps SQL Server output text to the parser's internal values, mirroring the JS `lang` parameter. `StatisticsParser.Core` ships three static singletons:
 
-Key `ParserLanguage` fields:
+- `ParserLanguage.English` — used as the default by `ParseData` when callers don't supply one
+- `ParserLanguage.Spanish`
+- `ParserLanguage.Italian`
 
-| Field | English value | Purpose |
-|---|---|---|
-| `Table` | `"Table"` | IO line prefix; also column name |
-| `ExecutionTime` | `"SQL Server Execution Times:"` | Header that precedes execution time data |
-| `CompileTime` | `"SQL Server parse and compile time:"` | Header that precedes compile time data |
-| `RowsAffected` | `["rows affected", "row affected"]` | Substrings matched in rows-affected lines |
-| `ErrorMsg` | `"Msg"` | First 3 chars of error lines |
-| `CompletionTimeLabel` | `"Completion time:"` | Prefix of completion time lines |
-| `CpuTime` | `"CPU time ="` | Token in time data lines |
-| `ElapsedTime` | `"elapsed time ="` | Token in time data lines |
-| `Milliseconds` | `"ms"` | Token in time data lines |
-| `Scan`, `Logical`, `Physical`, ... | column name variants | Used to map IO column names to `IoColumn` enum |
+Values are hardcoded in C#, sourced from the three upstream JSON files in [Jorriss/StatisticsParser](https://github.com/Jorriss/StatisticsParser/tree/master/src/public/data) — [languagetext-en.json](https://github.com/Jorriss/StatisticsParser/blob/master/src/public/data/languagetext-en.json), [languagetext-es.json](https://github.com/Jorriss/StatisticsParser/blob/master/src/public/data/languagetext-es.json), [languagetext-it.json](https://github.com/Jorriss/StatisticsParser/blob/master/src/public/data/languagetext-it.json). Maintenance path: re-pull from upstream when language data changes. No JSON parser ships in `StatisticsParser.Core`, preserving its zero-dependency rule.
+
+Identification fields:
+
+| C# property | Type | Values | Purpose |
+|---|---|---|---|
+| `LangValue` | `string` | `"en"` / `"es"` / `"it"` | BCP-47-style code; matches upstream `langvalue` |
+| `LangName` | `string` | `"English"` / `"Español"` / `"Italian"` | Display name; matches upstream `langname` (Italian quirk: upstream uses the English word) |
+
+Parser-relevant fields:
+
+| C# property | Type | English value | Purpose |
+|---|---|---|---|
+| `Table` | `string` | `"Table"` | IO line prefix; also Table column name |
+| `ExecutionTime` | `string` | `"SQL Server Execution Times:"` | Header line equality match |
+| `CompileTime` | `string` | `"SQL Server parse and compile time:"` | Header line equality match |
+| `CpuTime` | `string` | `"CPU time = "` | Substring in time data line (note trailing space) |
+| `ElapsedTime` | `string` | `"elapsed time = "` | Substring in time data line |
+| `Milliseconds` | `string` | `"ms"` | Unit token after numeric values |
+| `RowsAffected` | `IReadOnlyList<string>` | `["row(s) affected", "row affected", "rows affected"]` | Any substring match indicates a rows-affected line |
+| `ErrorMsg` | `string` | `"Msg"` | First-3-chars match of error lines (Italian: `"Mes"`) |
+| `CompletionTimeLabel` | `string` | `"Completion time: "` | Line prefix; same in all three languages (trailing space) |
+| `Scan` | `IReadOnlyList<string>` | `["scan count"]` | Column-name variants for `IoColumn.Scan` |
+| `Logical` | `IReadOnlyList<string>` | `["logical reads"]` | `IoColumn.Logical` |
+| `Physical` | `IReadOnlyList<string>` | `["physical reads"]` | `IoColumn.Physical` |
+| `PageServer` | `IReadOnlyList<string>` | `["page server reads"]` | `IoColumn.PageServer` |
+| `ReadAhead` | `IReadOnlyList<string>` | `["read-ahead reads"]` | `IoColumn.ReadAhead` |
+| `PageServerReadAhead` | `IReadOnlyList<string>` | `["page server read-ahead reads"]` | `IoColumn.PageServerReadAhead` |
+| `LobLogical` | `IReadOnlyList<string>` | `["lob logical reads"]` | `IoColumn.LobLogical` |
+| `LobPhysical` | `IReadOnlyList<string>` | `["lob physical reads"]` | `IoColumn.LobPhysical` |
+| `LobPageServer` | `IReadOnlyList<string>` | `["lob page server reads"]` | `IoColumn.LobPageServer` |
+| `LobReadAhead` | `IReadOnlyList<string>` | `["lob read-ahead reads"]` | `IoColumn.LobReadAhead` |
+| `LobPageServerReadAhead` | `IReadOnlyList<string>` | `["lob page server read-ahead reads"]` | `IoColumn.LobPageServerReadAhead` |
+| `SegmentReads` | `IReadOnlyList<string>` | `["segment reads"]` | `IoColumn.SegmentReads` |
+| `SegmentSkipped` | `IReadOnlyList<string>` | `["segment skipped"]` | `IoColumn.SegmentSkipped` |
+
+Non-English equivalents (Spanish `Tabla`, Italian `Tabella`, etc.) are sourced verbatim from the upstream JSON. Spanish includes synonym phrases for several columns — e.g., `loblogical: ["lecturas lógicas de lob", "lecturas lógicas de línea de negocio"]` — which is why every column-variant field is `IReadOnlyList<string>`.
+
+**Method**: `IoColumn DetermineIoColumn(string columnText)` matches `columnText.Trim()` case-insensitively against each column-variant list and returns the matching `IoColumn` enum value, or `IoColumn.NotFound` if no list contains the input. Mirrors the JS `getIOColumnEnum` pattern.
+
+**Deferred** (tracked in [TODO.md](TODO.md)):
+
+- Language **selection / auto-detect** — `ParseData` accepts a `ParserLanguage` but the SSMS extension always passes `English`. Adding either auto-detect from input markers or a Tools > Options page is future work.
+- **Locale-specific number formats** — Spanish and Italian SQL Server output may emit numbers using `.` thousand separator and `,` decimal separator (per the upstream `numberformat` block). The current parser assumes invariant integers.
+- **UI display string localization** — the Stats Parser tool window renders English column headers (`"Logical Reads"`, `"Totals:"`, `"rows affected"`, etc.) regardless of the parsed input language. Header fields from the upstream JSON (`headerscan`, `headerlogical`, `totals`, `headerrowsaffected`, etc.) are intentionally **not** part of `ParserLanguage` at this stage.
 
 #### Algorithm
 
