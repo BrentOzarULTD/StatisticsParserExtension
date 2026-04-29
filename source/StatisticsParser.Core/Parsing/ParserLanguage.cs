@@ -52,7 +52,7 @@ public sealed class ParserLanguage
         PageServer = new[] { "page server reads" },
         ReadAhead = new[] { "read-ahead reads" },
         PageServerReadAhead = new[] { "page server read-ahead reads" },
-        LobLogical = new[] { "lob logical reads", "lob logical reads" },
+        LobLogical = new[] { "lob logical reads" },
         LobPhysical = new[] { "lob physical reads" },
         LobPageServer = new[] { "lob page server reads" },
         LobReadAhead = new[] { "lob read-ahead reads" },

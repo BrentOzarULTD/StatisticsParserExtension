@@ -70,7 +70,7 @@ public static class Parser
                     break;
                 case RowType.ExecutionTime:
                 case RowType.CompileTime:
-                    HandleTimeHeader(ctx, rowType);
+                    HandleTimeHeader(ctx, line, rowType);
                     break;
                 case RowType.RowsAffected:
                     HandleRowsAffected(ctx, line);
@@ -332,9 +332,15 @@ public static class Parser
         gt.Total = total;
 
         var keep = new List<IoColumn>(gt.Columns.Count);
+        var hasPercentRead = false;
         foreach (var col in gt.Columns)
         {
-            if (col == IoColumn.Table || col == IoColumn.PercentRead)
+            if (col == IoColumn.PercentRead)
+            {
+                hasPercentRead = true;
+                continue;
+            }
+            if (col == IoColumn.Table)
             {
                 keep.Add(col);
                 continue;
@@ -346,6 +352,7 @@ public static class Parser
             }
             if (anyNonZero) keep.Add(col);
         }
+        if (hasPercentRead) keep.Add(IoColumn.PercentRead);
         gt.Columns = keep;
     }
 
@@ -403,9 +410,13 @@ public static class Parser
         }
     }
 
-    private static void HandleTimeHeader(ParseContext ctx, RowType headerType)
+    private static void HandleTimeHeader(ParseContext ctx, string headerLine, RowType headerType)
     {
-        if (ctx.LineIndex + 1 >= ctx.Lines.Length) return;
+        if (ctx.LineIndex + 1 >= ctx.Lines.Length)
+        {
+            ctx.Result.Data.Add(new InfoRow { Text = headerLine });
+            return;
+        }
 
         ctx.LineIndex++;
         var dataLine = ctx.Lines[ctx.LineIndex];
@@ -413,7 +424,12 @@ public static class Parser
             dataLine = dataLine.Substring(0, dataLine.Length - 1);
 
         var (cpuMs, elapsedMs, ok) = ParseTimeLine(dataLine, ctx.Lang);
-        if (!ok) return;
+        if (!ok)
+        {
+            ctx.Result.Data.Add(new InfoRow { Text = headerLine });
+            ctx.Result.Data.Add(new InfoRow { Text = dataLine });
+            return;
+        }
 
         var row = new TimeRow
         {
