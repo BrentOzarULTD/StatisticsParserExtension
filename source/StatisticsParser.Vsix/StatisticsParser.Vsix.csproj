@@ -1,4 +1,6 @@
-<Project Sdk="Microsoft.NET.Sdk">
+<Project>
+
+  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
 
   <PropertyGroup>
     <TargetFramework>net48</TargetFramework>
@@ -6,10 +8,67 @@
     <LangVersion>latest</LangVersion>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>false</UseWindowsForms>
+    <RootNamespace>StatisticsParser.Vsix</RootNamespace>
+    <AssemblyName>StatisticsParser.Vsix</AssemblyName>
+    <GeneratePkgDefFile>true</GeneratePkgDefFile>
+    <CreateVsixContainer>true</CreateVsixContainer>
+    <DeployExtension>false</DeployExtension>
+    <IncludeAssemblyInVSIXContainer>true</IncludeAssemblyInVSIXContainer>
+    <CopyBuildOutputToOutputDirectory>true</CopyBuildOutputToOutputDirectory>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.14.40265">
+      <ExcludeAssets>runtime</ExcludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="17.14.2120">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="source.extension.vsixmanifest">
+      <SubType>Designer</SubType>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <VSCTCompile Include="StatisticsParser.vsct">
+      <ResourceName>Menus.ctmenu</ResourceName>
+    </VSCTCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="VSPackage.resx">
+      <MergeWithCTO>true</MergeWithCTO>
+      <ManifestResourceName>VSPackage</ManifestResourceName>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="System.Design" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\StatisticsParser.Core\StatisticsParser.Core.csproj" />
   </ItemGroup>
+
+  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+
+  <!--
+    Microsoft.VsSDK.targets must be imported AFTER Microsoft.NET.Sdk's Sdk.targets so that
+    $(IntermediateOutputPath) is resolved in time for VsSDK's $(TemplateOutputDirectory) default.
+    The package's build/Microsoft.VSSDK.BuildTools.targets is auto-imported by NuGet and only
+    sets env vars; the real VSIX targets live in tools/VSSDK/Microsoft.VsSDK.targets and must
+    be imported manually for SDK-style projects.
+  -->
+  <PropertyGroup>
+    <VsSDKBuildToolsTargetsPath>$(NuGetPackageRoot)microsoft.vssdk.buildtools\17.14.2120\tools\VSSDK\Microsoft.VsSDK.targets</VsSDKBuildToolsTargetsPath>
+  </PropertyGroup>
+  <Import Project="$(VsSDKBuildToolsTargetsPath)" Condition="Exists('$(VsSDKBuildToolsTargetsPath)')" />
+
+  <!-- Run CreateVsixContainer as part of Build so a .vsix lands in $(OutDir) on every build. -->
+  <Target Name="EnsureVsixContainerOnBuild" AfterTargets="Build" DependsOnTargets="CreateVsixContainer" />
 
 </Project>

@@ -3,6 +3,10 @@ bin/
 obj/
 out/
 
+# VsSDK BuildTools emits a detokenized copy of source.extension.vsixmanifest
+# into the project source folder during build (CopyVsixManifestToOutput target)
+source/StatisticsParser.Vsix/extension.vsixmanifest
+
 # Visual Studio
 .vs/
 *.user

@@ -15,8 +15,8 @@ Phases 1–6 (Core + Tests) run on any OS. Phases 7–11 require Windows with VS
 | 1 | JS parser source | Fetch `parser.js` from GitHub when porting — it is authoritative; TECHNICAL.md is a summary only |
 | 2 | `CompletionTimeRow` storage | Parser parses ISO 8601 string to `DateTimeOffset`; UI formats with local culture |
 | 3 | Column zero-suppression | `IoGroup.Columns` excludes columns where every row is zero (matches FUNCTIONAL.md examples) |
-| 4 | SSMS 22 NuGet SDK packages | Discovery task — research spike at start of Phase 7 |
-| 5 | Messages tab context menu GUID | Discovery task — inspect SSMS command table at start of Phase 7 |
+| 4 | SSMS 22 NuGet SDK packages | `Microsoft.VisualStudio.SDK` 17.14.40265 + `Microsoft.VSSDK.BuildTools` 17.14.2120; install target `Microsoft.VisualStudio.Ssms [22.0,]` amd64. See [PHASE7-RESEARCH.md](PHASE7-RESEARCH.md) |
+| 5 | Messages tab context menu GUID | Deferred — Messages tab is not an `IVsOutputWindow` pane in SSMS 22. Initial placement: `IDM_VS_CTXT_CODEWIN`; final placement discovered during Phase 7 experimental-hive prototyping. See [PHASE7-RESEARCH.md](PHASE7-RESEARCH.md) |
 
 ---
 
@@ -154,23 +154,53 @@ Test inputs and expected values taken directly from FUNCTIONAL.md examples:
 
 ---
 
-## Phase 7 — VSIX Package Setup *(Windows only)*
+## Phase 7 — VSIX Package Setup *(Windows only)* - COMPLETED
 
-### Research spike (before coding)
-1. Identify correct NuGet package IDs for SSMS 22 SDK (candidates: `Microsoft.VisualStudio.SDK`, `Community.VisualStudio.Toolkit`, SSMS-specific overlays).
-2. Discover Messages tab context menu GUID via SSMS SDK docs, devenv command table inspection, or SSMS extension samples.
+Research spikes complete — see [PHASE7-RESEARCH.md](PHASE7-RESEARCH.md). The Messages-tab-specific menu GUID is not statically discoverable; Phase 7 ships with a fallback `IDM_VS_CTXT_CODEWIN` placement plus a Tools menu entry, and the Messages-tab placement is added later via experimental-hive discovery (see Phase 8a below).
+
+**Build constraint discovered during implementation**: SDK-style csproj + `Microsoft.VSSDK.BuildTools` 17.14.x does not auto-import `Microsoft.VsSDK.targets` (only the env-var-setting `Microsoft.VSSDK.BuildTools.targets` is auto-imported). The csproj manually `<Import>`s the inner `tools/VSSDK/Microsoft.VsSDK.targets` after the SDK targets resolve `$(IntermediateOutputPath)`, then chains `CreateVsixContainer` to `AfterTargets="Build"` so a `.vsix` lands in `bin/` on every build. Net effect: build with `msbuild` from a VS 2022/2026 install; `dotnet build` produces the assembly but skips VSIX packaging.
+
+### csproj additions
+
+```xml
+<ItemGroup>
+  <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.14.40265">
+    <ExcludeAssets>runtime</ExcludeAssets>
+  </PackageReference>
+  <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="17.14.2120">
+    <PrivateAssets>all</PrivateAssets>
+  </PackageReference>
+</ItemGroup>
+```
 
 ### Files to create
-- `source/StatisticsParser.Vsix/source.extension.vsixmanifest` — identity, version, VS 2026 shell prerequisite
-- `source/StatisticsParser.Vsix/StatisticsParser.vsct` — command group GUID + command ID; placement in Messages tab context menu
+- `source/StatisticsParser.Vsix/source.extension.vsixmanifest` — identity, version, `<InstallationTarget Id="Microsoft.VisualStudio.Ssms" Version="[22.0,]">` with `<ProductArchitecture>amd64</ProductArchitecture>`, `Microsoft.VisualStudio.Component.CoreEditor [17.0,19.0)` prerequisite
+- `source/StatisticsParser.Vsix/StatisticsParser.vsct` — command group GUID + command ID; initial placement under `IDM_VS_CTXT_CODEWIN` (`guidSHLMainMenu`); a Messages-tab `<CommandPlacement>` is added in Phase 8a once the parent menu's `Guid`/`ID` is captured from the experimental hive
 - `source/StatisticsParser.Vsix/Commands/StatisticsParserPackage.cs` — `AsyncPackage` subclass with `[PackageRegistration]`, `[ProvideMenuResource]`, `[ProvideToolWindow]` attributes; `InitializeAsync` registers command and tool window
 - `source/StatisticsParser.Vsix/Commands/ParseStatisticsCommand.cs` — `Execute` handler: capture → parse → show window
 
-**Verification**: VSIX loads in SSMS 22 experimental instance; "Parse Statistics" appears in Messages tab right-click menu.
+**Verification**: VSIX loads in SSMS 22 experimental instance; "Parse Statistics" appears on the right-click context menu of an open .sql query window (Messages-tab placement is added in Phase 8a).
 
 ---
 
 ## Phase 8 — Messages Tab Content Capture
+
+The original plan assumed `IVsOutputWindow.GetPane()` would return the Messages tab. [PHASE7-RESEARCH.md](PHASE7-RESEARCH.md) §Spike 2 confirmed this is not the case in SSMS 22 — the Messages tab is owned by `SQLEditors.dll`'s `SqlScriptEditorControl`, not the VS Output window. Phase 8 is therefore split into a discovery prototype and an implementation pass.
+
+### Phase 8a — Messages-text accessor discovery prototype *(experimental hive)*
+
+Goal: identify, by hands-on probing, **one** working surface that returns the current Messages-tab text from the active query window. Try these in order; stop at the first that works:
+
+1. **Brokered services** — inspect `Microsoft.SqlServer.Management.UI.VSIntegration.SqlEditor.BrokeredContracts.dll` (v22.0.103.0, ships in SSMS 22 IDE root) via reflection for any contract exposing messages/results text. Newest and most-likely-supported surface.
+2. **`IVsTextBuffer` underneath the Messages tab** — locate the active `SqlScriptEditorControl` via DTE's active document; check whether the Messages tab's underlying control implements `IVsTextLines` / `IVsTextBuffer` we can `GetLineText()` from.
+3. **Reflection on `SqlScriptEditorControl`** — private API; almost certainly has a `MessagesText` / `MessagesPaneText` member. Fragile across SSMS versions; document the exact reflected member.
+4. **Query-execution completion event** — subscribe via the SqlEditor brokered service and accumulate the `messages` payload as queries finish. Highest effort but most stable.
+
+While investigating, also capture: the parent menu `Guid` + `Id` of the Messages-tab right-click context menu by attaching a debugger to `IOleCommandTarget.QueryStatus` callbacks while right-clicking the tab. Add the `<CommandPlacement>` to the vsct once captured.
+
+**Output of 8a**: a short note in [PHASE7-RESEARCH.md](PHASE7-RESEARCH.md) (or a new appendix) recording (a) which surface returned the text, (b) any required reflection signature, and (c) the Messages-tab menu Guid/Id.
+
+### Phase 8b — Implement `MessagesTabReader`
 
 `source/StatisticsParser.Vsix/Commands/MessagesTabReader.cs`
 
@@ -178,14 +208,9 @@ Test inputs and expected values taken directly from FUNCTIONAL.md examples:
 public static string GetMessagesText(IServiceProvider serviceProvider)
 ```
 
-Steps:
-1. `GetService(typeof(SVsOutputWindow))` → `IVsOutputWindow`
-2. Look up Messages pane by its well-known GUID
-3. `IVsOutputWindowPane.GetText(out string text)`
+Implementation follows whichever surface 8a settled on. If the chosen surface returns text synchronously, the signature above is final; if it requires async accumulation (option 4), promote to `Task<string> GetMessagesTextAsync(...)` and update the caller.
 
-**Risk**: If `GetText()` is unavailable on the SSMS Messages pane, fall back to subscribing to query-execution completion events and accumulating output there. Validate `GetText()` availability in the experimental instance before building the fallback.
-
-**Verification**: Captured text matches Messages tab content (manual smoke test in SSMS).
+**Verification**: captured text matches Messages tab content (manual smoke test in SSMS) for: a single-statement query with `SET STATISTICS IO, TIME ON`, a multi-statement batch, and a query that produces an error.
 
 ---
 
@@ -257,9 +282,10 @@ PercentRead → "% Logical Reads of Total Reads"
 
 | Risk | Mitigation |
 |---|---|
-| SSMS 22 NuGet SDK package IDs unknown | Research spike at start of Phase 7 |
-| Messages tab context menu GUID unknown | Discovery step at start of Phase 7 |
-| `IVsOutputWindowPane.GetText()` may be unavailable | Validate early in Phase 8; fallback to query-execution event subscription |
+| Messages tab is **not** an `IVsOutputWindow` pane in SSMS 22 (confirmed 2026-04-29 via install inspection — see [PHASE7-RESEARCH.md](PHASE7-RESEARCH.md)) | Phase 8a probes brokered contracts → `IVsTextBuffer` → reflection on `SqlScriptEditorControl` → query-completion event in that order; first one that works wins |
+| Messages-tab context menu Guid/Id is not statically discoverable (no text VSCT/CTC ships with SSMS 22) | Phase 7 ships with `IDM_VS_CTXT_CODEWIN` placement only; Phase 8a captures the Messages-tab parent menu Guid/Id via debugger-attached `IOleCommandTarget` probing in the experimental hive and adds a `<CommandPlacement>` |
+| `Microsoft.VisualStudio.SDK` v18 metapackage not yet on NuGet (SSMS 22 ships shell 18.0) | Pin to 17.14.40265 — Microsoft Learn confirms VS 2026 accepts 17.x extensions with minimal breaking changes; revisit when v18 is published |
+| Reflection-based Messages-text access (Phase 8a option 3) is fragile across SSMS minor versions | Prefer brokered-contracts (option 1) or completion-event (option 4) if either works; if reflection is the only path, pin the signature in code with a clear comment so version bumps surface as test failures |
 
 ---
 

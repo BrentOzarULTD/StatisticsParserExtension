@@ -6,10 +6,14 @@
       "PowerShell(dotnet test source/StatisticsParser.Core.Tests 2>&1)",
       "WebFetch(domain:raw.githubusercontent.com)",
       "PowerShell(dotnet test .\\\\source\\\\StatisticsParser.Core.Tests\\\\StatisticsParser.Core.Tests.csproj)",
-      "WebSearch"
+      "WebSearch",
+      "PowerShell(dotnet test source/StatisticsParser.Core.Tests --nologo -v minimal)",
+      "PowerShell(dotnet build StatisticsParserExtension.sln*)",
+      "PowerShell(dotnet build source/StatisticsParser.Vsix*)",
+      "PowerShell(dotnet build source/StatisticsParser.Core*)",
+      "PowerShell(dotnet restore*)",
+      "PowerShell(msbuild source/StatisticsParser.Vsix*)",
+      "PowerShell(msbuild source\\\\StatisticsParser.Vsix*)"
     ]
-  },
-  "env": {
-    "CLAUDE_CODE_GIT_BASH_PATH": "C:\\Program Files\\Git\\bin\\bash.exe"
   }
 }

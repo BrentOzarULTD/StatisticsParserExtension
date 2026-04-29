@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CommandTable xmlns="http://schemas.microsoft.com/VisualStudio/2005-10-18/CommandTable" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+  <Extern href="stdidcmd.h" />
+  <Extern href="vsshlids.h" />
+
+  <Commands package="guidStatisticsParserPackage">
+
+    <Groups>
+      <Group guid="guidStatisticsParserCmdSet" id="ParseStatisticsGroup" priority="0x0600">
+        <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_CODEWIN" />
+      </Group>
+    </Groups>
+
+    <Buttons>
+      <Button guid="guidStatisticsParserCmdSet" id="cmdidParseStatistics" priority="0x0100" type="Button">
+        <Parent guid="guidStatisticsParserCmdSet" id="ParseStatisticsGroup" />
+        <Strings>
+          <ButtonText>Parse Statistics</ButtonText>
+          <CanonicalName>Parse Statistics</CanonicalName>
+          <LocCanonicalName>Parse Statistics</LocCanonicalName>
+        </Strings>
+      </Button>
+    </Buttons>
+
+  </Commands>
+
+  <CommandPlacements>
+    <CommandPlacement guid="guidStatisticsParserCmdSet" id="cmdidParseStatistics" priority="0x0100">
+      <Parent guid="guidSHLMainMenu" id="IDG_VS_TOOLS_EXT_TOOLS" />
+    </CommandPlacement>
+  </CommandPlacements>
+
+  <Symbols>
+    <GuidSymbol name="guidStatisticsParserPackage" value="{0F240EE5-54A7-43CB-9710-3A8E2DEA5B46}" />
+
+    <GuidSymbol name="guidStatisticsParserCmdSet" value="{5B21B934-FB0C-4BEC-A466-CDCB423B16E6}">
+      <IDSymbol name="ParseStatisticsGroup" value="0x1020" />
+      <IDSymbol name="cmdidParseStatistics" value="0x0100" />
+    </GuidSymbol>
+  </Symbols>
+
+</CommandTable>
