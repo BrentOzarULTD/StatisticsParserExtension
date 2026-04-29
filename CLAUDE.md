@@ -29,4 +29,5 @@ The VSIX project (Phases 7–11 in PLAN.md) requires Windows + VS 2026 + SSMS 22
 
 ## Workflow
 
+On Windows, use the PowerShell tool, not Bash. Claude Code's Bash launcher fails with `Exit code 5` (ERROR_ACCESS_DENIED) on this repo because both the working directory and the Git Bash install path contain spaces (Claude Code issues #4507, #20551). PowerShell has no such issue.
 
