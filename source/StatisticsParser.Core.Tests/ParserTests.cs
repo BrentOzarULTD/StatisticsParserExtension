@@ -262,4 +262,192 @@ public class ParserTests
             new[] { "Comments", "Posts", "PostTags", "PostTypes", "Users", "Votes", "Worktable" },
             tableNames);
     }
+
+    private const string SingleStatementSample =
+        "(100 rows affected)\n" +
+        "Table 'Posts'. Scan count 1, logical reads 32, physical reads 3, page server reads 0, read-ahead reads 1957, page server read-ahead reads 0, lob logical reads 0, lob physical reads 0, lob page server reads 0, lob read-ahead reads 0, lob page server read-ahead reads 0.\n" +
+        "\n" +
+        " SQL Server Execution Times:\n" +
+        "   CPU time = 0 ms,  elapsed time = 959 ms.\n" +
+        "\n" +
+        "Completion time: 2026-04-27T15:33:34.6405733-04:00\n";
+
+    private const string MultiStatementSample =
+        "(100 rows affected)\n" +
+        "Table 'Posts'. Scan count 1, logical reads 32, physical reads 3, page server reads 0, read-ahead reads 1957, page server read-ahead reads 0, lob logical reads 0, lob physical reads 0, lob page server reads 0, lob read-ahead reads 0, lob page server read-ahead reads 0.\n" +
+        "Table 'Users'. Scan count 1, logical reads 8, physical reads 0, page server reads 0, read-ahead reads 0, page server read-ahead reads 0, lob logical reads 0, lob physical reads 0, lob page server reads 0, lob read-ahead reads 0, lob page server read-ahead reads 0.\n" +
+        "\n" +
+        " SQL Server Execution Times:\n" +
+        "   CPU time = 5 ms,  elapsed time = 25 ms.\n" +
+        "\n" +
+        "Completion time: 2026-04-27T15:33:35.0000000-04:00\n" +
+        "\n" +
+        "(50 rows affected)\n" +
+        "Table 'Comments'. Scan count 2, logical reads 64, physical reads 0, page server reads 0, read-ahead reads 0, page server read-ahead reads 0, lob logical reads 0, lob physical reads 0, lob page server reads 0, lob read-ahead reads 0, lob page server read-ahead reads 0.\n" +
+        "\n" +
+        " SQL Server Execution Times:\n" +
+        "   CPU time = 3 ms,  elapsed time = 15 ms.\n" +
+        "\n" +
+        "Completion time: 2026-04-27T15:33:35.3000000-04:00\n";
+
+    [Fact]
+    public void ParseData_SingleStatementSample_ProducesOneIoGroupWithPostsRow()
+    {
+        var result = Parser.ParseData(SingleStatementSample);
+
+        Assert.Equal(1, result.TableCount);
+
+        var group = Assert.Single(result.Data.OfType<IoGroup>());
+        var posts = Assert.Single(group.Data);
+        Assert.Equal("Posts", posts.TableName);
+        Assert.Equal(1, posts.Scan);
+        Assert.Equal(32, posts.Logical);
+        Assert.Equal(3, posts.Physical);
+        Assert.Equal(1957, posts.ReadAhead);
+        Assert.Equal(32, group.Total.Logical);
+        Assert.Equal(100.0, posts.PercentRead, 6);
+    }
+
+    [Fact]
+    public void ParseData_SingleStatementSample_ExecutionTimeIsCapturedAndTotaled()
+    {
+        var result = Parser.ParseData(SingleStatementSample);
+
+        var execution = Assert.Single(result.Data.OfType<TimeRow>(), r => r.RowType == RowType.ExecutionTime);
+        Assert.False(execution.Summary);
+        Assert.Equal(0, execution.CpuMs);
+        Assert.Equal(959, execution.ElapsedMs);
+
+        Assert.Equal(0, result.Total.ExecutionTotal.CpuMs);
+        Assert.Equal(959, result.Total.ExecutionTotal.ElapsedMs);
+    }
+
+    [Fact]
+    public void ParseData_MultiStatementSample_ProducesTwoIoGroupsWithCorrectPercentages()
+    {
+        var result = Parser.ParseData(MultiStatementSample);
+
+        var groups = result.Data.OfType<IoGroup>().ToList();
+        Assert.Equal(2, groups.Count);
+
+        var group0 = groups[0];
+        Assert.Equal(2, group0.Data.Count);
+        var posts = group0.Data.Single(r => r.TableName == "Posts");
+        var users = group0.Data.Single(r => r.TableName == "Users");
+        Assert.Equal(40, group0.Total.Logical);
+        Assert.Equal(80.0, posts.PercentRead, 3);
+        Assert.Equal(20.0, users.PercentRead, 3);
+
+        var group1 = groups[1];
+        var comments = Assert.Single(group1.Data);
+        Assert.Equal("Comments", comments.TableName);
+        Assert.Equal(64, group1.Total.Logical);
+        Assert.Equal(100.0, comments.PercentRead, 3);
+    }
+
+    [Fact]
+    public void ParseData_MultiStatementSample_GrandTotalAggregatesAndSortsAlphabetically()
+    {
+        var result = Parser.ParseData(MultiStatementSample);
+        var io = result.Total.IoTotal;
+
+        Assert.Equal(
+            new[] { "Comments", "Posts", "Users" },
+            io.Data.Select(d => d.TableName).ToArray());
+
+        Assert.Equal(104, io.Total.Logical);
+
+        var comments = io.Data.Single(d => d.TableName == "Comments");
+        var posts = io.Data.Single(d => d.TableName == "Posts");
+        var users = io.Data.Single(d => d.TableName == "Users");
+        Assert.Equal(61.538, comments.PercentRead, 3);
+        Assert.Equal(30.769, posts.PercentRead, 3);
+        Assert.Equal(7.692, users.PercentRead, 3);
+    }
+
+    [Fact]
+    public void ParseData_MultiStatementSample_GrandTimeTotalSumsExecution()
+    {
+        var result = Parser.ParseData(MultiStatementSample);
+
+        Assert.Equal(8, result.Total.ExecutionTotal.CpuMs);
+        Assert.Equal(40, result.Total.ExecutionTotal.ElapsedMs);
+        Assert.Equal(0, result.Total.CompileTotal.CpuMs);
+        Assert.Equal(0, result.Total.CompileTotal.ElapsedMs);
+    }
+
+    [Fact]
+    public void ParseData_EmptyInput_ReturnsEmptyResultWithoutThrowing()
+    {
+        var result = Parser.ParseData("");
+
+        Assert.NotNull(result);
+        Assert.Empty(result.Data);
+        Assert.Equal(0, result.TableCount);
+        Assert.Empty(result.Total.IoTotal.Data);
+        Assert.Equal(0, result.Total.ExecutionTotal.CpuMs);
+        Assert.Equal(0, result.Total.CompileTotal.CpuMs);
+    }
+
+    [Fact]
+    public void ParseData_PlainProseInput_ProducesOnlyInfoRows()
+    {
+        var input = "Hello world\nThis isn't statistics output.";
+        var result = Parser.ParseData(input);
+
+        Assert.Equal(2, result.Data.Count);
+        Assert.All(result.Data, row => Assert.IsType<InfoRow>(row));
+        Assert.Equal("Hello world", ((InfoRow)result.Data[0]).Text);
+        Assert.Equal("This isn't statistics output.", ((InfoRow)result.Data[1]).Text);
+    }
+
+    [Fact]
+    public void ParseData_SegmentReadsContinuation_MergesIntoLastIoRow()
+    {
+        var input =
+            "Table 'Foo'. scan count 1, logical reads 100, physical reads 0, read-ahead reads 0.\n" +
+            "Table 'Foo'. scan count 0, logical reads 0, physical reads 0, read-ahead reads 0, segment reads 50, segment skipped 25.\n" +
+            "\n" +
+            " SQL Server Execution Times:\n" +
+            "   CPU time = 1 ms,  elapsed time = 1 ms.\n";
+
+        var result = Parser.ParseData(input);
+        var group = Assert.Single(result.Data.OfType<IoGroup>());
+
+        var foo = Assert.Single(group.Data);
+        Assert.Equal("Foo", foo.TableName);
+        Assert.Equal(100, foo.Logical);
+        Assert.Equal(50, foo.SegmentReads);
+        Assert.Equal(25, foo.SegmentSkipped);
+
+        Assert.Contains(IoColumn.SegmentReads, group.Columns);
+        Assert.Contains(IoColumn.SegmentSkipped, group.Columns);
+    }
+
+    [Theory]
+    [InlineData(100, 200, 100, 202, true, 200)]
+    [InlineData(100, 200, 100, 195, true, 200)]
+    [InlineData(100, 200, 100, 206, false, 406)]
+    [InlineData(100, 200, 99, 200, false, 400)]
+    public void ParseData_SummaryExecutionTime_DetectionFollowsCpuExactAndElapsedTolerance(
+        int firstCpu, int firstElapsed,
+        int secondCpu, int secondElapsed,
+        bool expectedSecondIsSummary,
+        int expectedExecutionTotalElapsed)
+    {
+        var input =
+            $" SQL Server Execution Times:\n" +
+            $"   CPU time = {firstCpu} ms,  elapsed time = {firstElapsed} ms.\n" +
+            $" SQL Server Execution Times:\n" +
+            $"   CPU time = {secondCpu} ms,  elapsed time = {secondElapsed} ms.\n";
+
+        var result = Parser.ParseData(input);
+        var executions = result.Data.OfType<TimeRow>()
+            .Where(r => r.RowType == RowType.ExecutionTime).ToList();
+
+        Assert.Equal(2, executions.Count);
+        Assert.False(executions[0].Summary);
+        Assert.Equal(expectedSecondIsSummary, executions[1].Summary);
+        Assert.Equal(expectedExecutionTotalElapsed, result.Total.ExecutionTotal.ElapsedMs);
+    }
 }

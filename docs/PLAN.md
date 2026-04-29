@@ -130,7 +130,7 @@ Tests live alongside (flat at `StatisticsParser.Core.Tests` root, matching `Pars
 
 ## Phase 6 — Unit Tests
 
-`source/StatisticsParser.Core.Tests/Parsing/ParserTests.cs`
+`source/StatisticsParser.Core.Tests/ParserTests.cs`
 
 Test inputs and expected values taken directly from FUNCTIONAL.md examples:
 
@@ -284,8 +284,12 @@ source/
       PercentFormatter.cs
   StatisticsParser.Core.Tests/
     StatisticsParser.Core.Tests.csproj
-    Parsing/
-      ParserTests.cs
+    ParserTests.cs
+    ParserLanguageTests.cs
+    ParserSpanishTests.cs
+    ParserItalianTests.cs
+    TimeFormatterTests.cs
+    PercentFormatterTests.cs
   StatisticsParser.Vsix/
     StatisticsParser.Vsix.csproj
     source.extension.vsixmanifest
