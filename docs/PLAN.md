@@ -20,7 +20,7 @@ Phases 1–6 (Core + Tests) run on any OS. Phases 7–11 require Windows with VS
 
 ---
 
-## Phase 1 — Solution Scaffold
+## Phase 1 — Solution Scaffold - COMPLETED
 
 Create `StatisticsParserExtension.sln` with three projects:
 
@@ -36,7 +36,7 @@ Build configs: `Debug|x64` and `Release|x64` for Vsix; `AnyCPU` for Core and Tes
 
 ---
 
-## Phase 2 — Core Models & Enums
+## Phase 2 — Core Models & Enums - COMPLETED
 
 All files in `source/StatisticsParser.Core/Models/`:
 
@@ -67,7 +67,7 @@ All files in `source/StatisticsParser.Core/Models/`:
 
 ---
 
-## Phase 3 — Parser Language
+## Phase 3 — Parser Language - COMPLETED
 
 `source/StatisticsParser.Core/Parsing/ParserLanguage.cs`
 
@@ -80,7 +80,7 @@ All files in `source/StatisticsParser.Core/Models/`:
 
 ---
 
-## Phase 4 — Parser Engine
+## Phase 4 — Parser Engine - COMPLETED
 
 `source/StatisticsParser.Core/Parsing/Parser.cs`
 
@@ -114,13 +114,17 @@ Zero-column suppression: columns where every row in the group is zero are exclud
 
 ---
 
-## Phase 5 — Formatting Utilities
+## Phase 5 — Formatting Utilities - COMPLETED
 
 `source/StatisticsParser.Core/Formatting/TimeFormatter.cs`
 - `public static string FormatMs(int ms)` → `"hh:mm:ss.fff"` (e.g. `959` → `"00:00:00.959"`)
 
 `source/StatisticsParser.Core/Formatting/PercentFormatter.cs`
 - `public static string FormatPercent(double value)` → `"100.000%"` (3 decimal places)
+
+Tests live alongside (flat at `StatisticsParser.Core.Tests` root, matching `ParserTests.cs`):
+- `TimeFormatterTests.cs` — `[Theory]` covering `0`, `5`, `959`, `1000`, `60000`, `3661123`
+- `PercentFormatterTests.cs` — `[Theory]` covering `0.0`, `7.692`, `61.538`, `100.0`, `12.3456` (rounding); plus a `de-DE` `CurrentCulture` test confirming output stays invariant
 
 ---
 
