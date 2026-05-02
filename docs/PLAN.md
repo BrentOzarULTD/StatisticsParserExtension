@@ -128,7 +128,7 @@ Tests live alongside (flat at `StatisticsParser.Core.Tests` root, matching `Pars
 
 ---
 
-## Phase 6 — Unit Tests
+## Phase 6 — Unit Tests - COMPLETED
 
 `source/StatisticsParser.Core.Tests/ParserTests.cs`
 

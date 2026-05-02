@@ -264,10 +264,10 @@ A single VSIX targets SSMS 22 (64-bit, VS 2026 shell). CI produces one release a
 | `StatisticsParser.vsix` | SSMS 22 |
 
 Build configurations:
-- `Debug | x64` → VSIX project (development)
-- `Release | x64` → VSIX project (release artifact)
+- `Debug | AnyCPU` → VSIX project (development)
+- `Release | AnyCPU` → VSIX project (release artifact)
 
-`StatisticsParser.Core` is `AnyCPU`. Its .NET Standard 2.0 output is referenced by both the VSIX project (at runtime on .NET Framework 4.8) and the test project (at runtime on .NET 8).
+Both `StatisticsParser.Core` and `StatisticsParser.Vsix` build as `AnyCPU`. The VSIX runs in the 64-bit SSMS / VS host process; install eligibility is enforced via `<ProductArchitecture>amd64</ProductArchitecture>` in [source.extension.vsixmanifest](../source/StatisticsParser.Vsix/source.extension.vsixmanifest), not the assembly platform. `StatisticsParser.Core`'s .NET Standard 2.0 output is referenced by both the VSIX project (at runtime on .NET Framework 4.8) and the test project (at runtime on .NET 8).
 
 ## Distribution
 

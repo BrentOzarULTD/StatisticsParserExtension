@@ -1,5 +1,5 @@
 using System;
-using System.ComponentModel.Design;
+using Community.VisualStudio.Toolkit;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -8,36 +8,14 @@ using Task = System.Threading.Tasks.Task;
 
 namespace StatisticsParser.Vsix.Commands
 {
-    internal sealed class ParseStatisticsCommand
+    [Command(PackageGuids.guidStatisticsParserCmdSetString, PackageIds.cmdidParseStatistics)]
+    internal sealed class ParseStatisticsCommand : BaseCommand<ParseStatisticsCommand>
     {
-        public static readonly Guid CommandSet = new Guid("5B21B934-FB0C-4BEC-A466-CDCB423B16E6");
-        public const int CommandId = 0x0100;
-
-        private readonly AsyncPackage _package;
-
-        private ParseStatisticsCommand(AsyncPackage package, OleMenuCommandService commandService)
+        protected override async Task ExecuteAsync(OleMenuCmdEventArgs e)
         {
-            _package = package ?? throw new ArgumentNullException(nameof(package));
-            commandService = commandService ?? throw new ArgumentNullException(nameof(commandService));
+            await Package.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            var menuCommandId = new CommandID(CommandSet, CommandId);
-            var menuItem = new MenuCommand(Execute, menuCommandId);
-            commandService.AddCommand(menuItem);
-        }
-
-        public static async Task InitializeAsync(AsyncPackage package)
-        {
-            await package.JoinableTaskFactory.SwitchToMainThreadAsync(package.DisposalToken);
-            var commandService = await package.GetServiceAsync(typeof(IMenuCommandService)) as OleMenuCommandService
-                ?? throw new InvalidOperationException("Failed to acquire IMenuCommandService.");
-            _ = new ParseStatisticsCommand(package, commandService);
-        }
-
-        private void Execute(object sender, EventArgs e)
-        {
-            ThreadHelper.ThrowIfNotOnUIThread();
-
-            var window = _package.FindToolWindow(typeof(StatisticsParserToolWindow), 0, true)
+            var window = Package.FindToolWindow(typeof(StatisticsParserToolWindow), 0, true)
                 ?? throw new NotSupportedException("Cannot create Statistics Parser tool window.");
 
             if (window.Frame is IVsWindowFrame frame)

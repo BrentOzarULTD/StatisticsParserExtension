@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.0.31903.59
+# Visual Studio Version 18
+VisualStudioVersion = 18.5.11723.231 stable
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StatisticsParser.Core", "source\StatisticsParser.Core\StatisticsParser.Core.csproj", "{7F1B2A0C-1A4D-4E7F-9C3A-3E9B5A5D1F0A}"
 EndProject
@@ -33,9 +33,11 @@ Global
 		{3E5A1F2B-2C8D-4F0E-8A1B-9F3C5E7D2B4A}.Release|x64.ActiveCfg = Release|Any CPU
 		{3E5A1F2B-2C8D-4F0E-8A1B-9F3C5E7D2B4A}.Release|x64.Build.0 = Release|Any CPU
 		{9D8C7B6A-5F4E-4D3C-A2B1-A0F9E8D7C6B5}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{9D8C7B6A-5F4E-4D3C-A2B1-A0F9E8D7C6B5}.Debug|Any CPU.Build.0 = Debug|x64
 		{9D8C7B6A-5F4E-4D3C-A2B1-A0F9E8D7C6B5}.Debug|x64.ActiveCfg = Debug|x64
 		{9D8C7B6A-5F4E-4D3C-A2B1-A0F9E8D7C6B5}.Debug|x64.Build.0 = Debug|x64
 		{9D8C7B6A-5F4E-4D3C-A2B1-A0F9E8D7C6B5}.Release|Any CPU.ActiveCfg = Release|x64
+		{9D8C7B6A-5F4E-4D3C-A2B1-A0F9E8D7C6B5}.Release|Any CPU.Build.0 = Release|x64
 		{9D8C7B6A-5F4E-4D3C-A2B1-A0F9E8D7C6B5}.Release|x64.ActiveCfg = Release|x64
 		{9D8C7B6A-5F4E-4D3C-A2B1-A0F9E8D7C6B5}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection

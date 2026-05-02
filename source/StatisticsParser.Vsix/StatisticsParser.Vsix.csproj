@@ -1,4 +1,4 @@
-<Project>
+﻿<Project>
 
   <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
 
@@ -13,7 +13,9 @@
     <GeneratePkgDefFile>true</GeneratePkgDefFile>
     <CreateVsixContainer>true</CreateVsixContainer>
     <DeployExtension>false</DeployExtension>
+    <UseCodebase>true</UseCodebase>
     <IncludeAssemblyInVSIXContainer>true</IncludeAssemblyInVSIXContainer>
+    <IncludeDebugSymbolsInVSIXContainer>true</IncludeDebugSymbolsInVSIXContainer>
     <CopyBuildOutputToOutputDirectory>true</CopyBuildOutputToOutputDirectory>
   </PropertyGroup>
 
@@ -25,11 +27,18 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Community.VisualStudio.Toolkit.17" Version="17.0.533">
+      <ExcludeAssets>Runtime</ExcludeAssets>
+    </PackageReference>
+    <PackageReference Include="Community.VisualStudio.VSCT" Version="16.0.29.6">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
     <None Include="source.extension.vsixmanifest">
       <SubType>Designer</SubType>
+      <Generator>VSIXManifestCodeGenerator</Generator>
     </None>
   </ItemGroup>
 
