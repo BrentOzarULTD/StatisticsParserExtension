@@ -198,7 +198,7 @@ Goal: identify, by hands-on probing, **one** working surface that returns the cu
 
 While investigating, also capture: the parent menu `Guid` + `Id` of the Messages-tab right-click context menu by attaching a debugger to `IOleCommandTarget.QueryStatus` callbacks while right-clicking the tab. Add the `<CommandPlacement>` to the vsct once captured.
 
-**Output of 8a**: a short note in [PHASE7-RESEARCH.md](PHASE7-RESEARCH.md) (or a new appendix) recording (a) which surface returned the text, (b) any required reflection signature, and (c) the Messages-tab menu Guid/Id.
+**Output of 8a**: see [PHASE8A-FINDINGS.md](PHASE8A-FINDINGS.md) for the surface chosen, reflection signatures, and version-drift recovery notes. The Messages-tab menu Guid/Id capture is deferred to a follow-on Phase 8c task — Phase 7's Tools-menu placement is sufficient for 8b verification.
 
 ### Phase 8b — Implement `MessagesTabReader`
 
@@ -211,6 +211,8 @@ public static string GetMessagesText(IServiceProvider serviceProvider)
 Implementation follows whichever surface 8a settled on. If the chosen surface returns text synchronously, the signature above is final; if it requires async accumulation (option 4), promote to `Task<string> GetMessagesTextAsync(...)` and update the caller.
 
 **Verification**: captured text matches Messages tab content (manual smoke test in SSMS) for: a single-statement query with `SET STATISTICS IO, TIME ON`, a multi-statement batch, and a query that produces an error.
+
+**Output of 8b**: see [PHASE8B-FINDINGS.md](PHASE8B-FINDINGS.md) — verification results (2026-05-04) and Phase 8c briefing.
 
 ---
 

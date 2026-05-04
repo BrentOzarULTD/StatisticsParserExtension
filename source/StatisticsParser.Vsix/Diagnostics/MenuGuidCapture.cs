@@ -45,8 +45,9 @@ namespace StatisticsParser.Vsix.Diagnostics
             get { lock (_gate) { return _instance; } }
         }
 
-        public void Dump(ProbeOutputPane pane, bool reset)
+        public void Dump(StatisticsParserDiagnosticsPane pane, bool reset)
         {
+            ThreadHelper.ThrowIfNotOnUIThread();
             pane.WriteHeader("Menu-Guid Capture (passive, deduped)");
             KeyValuePair<(Guid, uint), int>[] snapshot;
             lock (_gate)

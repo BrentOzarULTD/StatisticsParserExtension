@@ -5,13 +5,30 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              mc:Ignorable="d"
              d:DesignHeight="200" d:DesignWidth="400">
-    <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
-        <StackPanel x:Name="RootPanel">
-            <TextBlock x:Name="EmptyStateText"
-                       Text="No statistics output found in Messages tab."
-                       HorizontalAlignment="Center"
-                       VerticalAlignment="Center"
-                       Margin="24" />
-        </StackPanel>
-    </ScrollViewer>
+    <Grid>
+        <TextBlock x:Name="EmptyStateText"
+                   Text="No statistics output found in Messages tab."
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"
+                   Margin="24"
+                   TextWrapping="Wrap"
+                   TextAlignment="Center"
+                   Visibility="Visible" />
+        <DockPanel x:Name="CapturedTextPanel"
+                   Visibility="Collapsed"
+                   LastChildFill="True">
+            <TextBlock x:Name="StatusText"
+                       DockPanel.Dock="Top"
+                       Margin="8,8,8,4"
+                       FontWeight="SemiBold" />
+            <TextBox x:Name="CapturedText"
+                     IsReadOnly="True"
+                     TextWrapping="NoWrap"
+                     HorizontalScrollBarVisibility="Auto"
+                     VerticalScrollBarVisibility="Auto"
+                     FontFamily="Consolas"
+                     AcceptsReturn="True"
+                     Margin="8,0,8,8" />
+        </DockPanel>
+    </Grid>
 </UserControl>

@@ -6,20 +6,22 @@ using Microsoft.VisualStudio.Shell.Interop;
 
 namespace StatisticsParser.Vsix.Diagnostics
 {
-    // Phase 8a discovery code — remove once Phase 8b lands.
-    internal sealed class ProbeOutputPane
+    // VS Output Window pane used for structured diagnostic traces (reflection lookups, RPC failures
+    // against the SSMS brokered services, etc.). The Guid is kept stable across the Phase 8a → 8b
+    // rename so users keep their docked pane.
+    internal sealed class StatisticsParserDiagnosticsPane
     {
-        public const string PaneTitle = "Statistics Parser — Probe";
+        public const string PaneTitle = "Statistics Parser — Diagnostics";
         private static readonly Guid PaneGuid = new Guid("F1E27B41-1A05-4D89-9E6F-F1E27B411A05");
 
         private readonly IVsOutputWindowPane _pane;
 
-        private ProbeOutputPane(IVsOutputWindowPane pane)
+        private StatisticsParserDiagnosticsPane(IVsOutputWindowPane pane)
         {
             _pane = pane;
         }
 
-        public static ProbeOutputPane GetOrCreate(IServiceProvider serviceProvider)
+        public static StatisticsParserDiagnosticsPane GetOrCreate(IServiceProvider serviceProvider)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
             if (serviceProvider == null) throw new ArgumentNullException(nameof(serviceProvider));
@@ -36,11 +38,12 @@ namespace StatisticsParser.Vsix.Diagnostics
             }
 
             pane.Activate();
-            return new ProbeOutputPane(pane);
+            return new StatisticsParserDiagnosticsPane(pane);
         }
 
         public void WriteHeader(string title)
         {
+            ThreadHelper.ThrowIfNotOnUIThread();
             WriteLine();
             WriteLine("=== " + title + " ===");
         }
@@ -51,41 +54,29 @@ namespace StatisticsParser.Vsix.Diagnostics
             _pane.OutputStringThreadSafe((text ?? string.Empty) + Environment.NewLine);
         }
 
-        public void WriteRaw(string text)
-        {
-            ThreadHelper.ThrowIfNotOnUIThread();
-            if (string.IsNullOrEmpty(text)) return;
-            _pane.OutputStringThreadSafe(text);
-        }
-
         public void WriteSuccess(string message)
         {
+            ThreadHelper.ThrowIfNotOnUIThread();
             WriteLine("  OK   " + message);
         }
 
         public void WriteInfo(string message)
         {
+            ThreadHelper.ThrowIfNotOnUIThread();
             WriteLine("  ..   " + message);
         }
 
         public void WriteFailure(string context, Exception ex)
         {
+            ThreadHelper.ThrowIfNotOnUIThread();
             WriteLine("  FAIL " + context);
-            WriteLine("       " + ex.GetType().FullName + ": " + ex.Message);
-            if (ex is System.Reflection.ReflectionTypeLoadException rtle && rtle.LoaderExceptions != null)
-            {
-                int idx = 0;
-                foreach (var le in rtle.LoaderExceptions)
-                {
-                    if (le == null) continue;
-                    WriteLine("         LoaderException[" + idx.ToString(CultureInfo.InvariantCulture) + "]: " + le.GetType().FullName + ": " + le.Message);
-                    if (++idx >= 8) { WriteLine("         (more loader exceptions suppressed)"); break; }
-                }
-            }
+            if (ex != null)
+                WriteLine("       " + ex.GetType().FullName + ": " + ex.Message);
         }
 
         public void WriteTimestamp(string label)
         {
+            ThreadHelper.ThrowIfNotOnUIThread();
             WriteLine(label + " at " + DateTime.Now.ToString("o", CultureInfo.InvariantCulture));
         }
     }

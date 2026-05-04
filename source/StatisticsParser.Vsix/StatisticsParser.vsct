@@ -23,23 +23,12 @@
           <LocCanonicalName>Parse Statistics</LocCanonicalName>
         </Strings>
       </Button>
-      <Button guid="guidStatisticsParserCmdSet" id="cmdidProbeMessageSource" priority="0x0200" type="Button">
-        <Parent guid="guidStatisticsParserCmdSet" id="ParseStatisticsGroup" />
-        <Strings>
-          <ButtonText>Probe Messages Source (Diagnostic)</ButtonText>
-          <CanonicalName>Probe Messages Source</CanonicalName>
-          <LocCanonicalName>Probe Messages Source</LocCanonicalName>
-        </Strings>
-      </Button>
     </Buttons>
 
   </Commands>
 
   <CommandPlacements>
     <CommandPlacement guid="guidStatisticsParserCmdSet" id="cmdidParseStatistics" priority="0x0100">
-      <Parent guid="guidSHLMainMenu" id="IDG_VS_TOOLS_EXT_TOOLS" />
-    </CommandPlacement>
-    <CommandPlacement guid="guidStatisticsParserCmdSet" id="cmdidProbeMessageSource" priority="0x0200">
       <Parent guid="guidSHLMainMenu" id="IDG_VS_TOOLS_EXT_TOOLS" />
     </CommandPlacement>
   </CommandPlacements>
@@ -50,7 +39,6 @@
     <GuidSymbol name="guidStatisticsParserCmdSet" value="{5B21B934-FB0C-4BEC-A466-CDCB423B16E6}">
       <IDSymbol name="ParseStatisticsGroup" value="0x1020" />
       <IDSymbol name="cmdidParseStatistics" value="0x0100" />
-      <IDSymbol name="cmdidProbeMessageSource" value="0x0101" />
     </GuidSymbol>
   </Symbols>
 
