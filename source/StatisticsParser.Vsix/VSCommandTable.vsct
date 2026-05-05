@@ -31,6 +31,11 @@
     <CommandPlacement guid="guidStatisticsParserCmdSet" id="cmdidParseStatistics" priority="0x0100">
       <Parent guid="guidSHLMainMenu" id="IDG_VS_TOOLS_EXT_TOOLS" />
     </CommandPlacement>
+
+    
+    <CommandPlacement guid="guidStatisticsParserCmdSet" id="cmdidParseStatistics" priority="0x0100">
+      <Parent guid="queryWindowContextCommandSet" id="queryWindowContextMenu" />
+    </CommandPlacement>
   </CommandPlacements>
 
   <Symbols>
@@ -39,6 +44,10 @@
     <GuidSymbol name="guidStatisticsParserCmdSet" value="{5B21B934-FB0C-4BEC-A466-CDCB423B16E6}">
       <IDSymbol name="ParseStatisticsGroup" value="0x1020" />
       <IDSymbol name="cmdidParseStatistics" value="0x0100" />
+    </GuidSymbol>
+
+    <GuidSymbol name="queryWindowContextCommandSet" value="{33F13AC3-80BB-4ECB-85BC-225435603A5E}">
+      <IDSymbol name="queryWindowContextMenu" value="0x0050" />
     </GuidSymbol>
   </Symbols>
 

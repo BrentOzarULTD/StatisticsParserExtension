@@ -179,7 +179,7 @@ Research spikes complete — see [PHASE7-RESEARCH.md](PHASE7-RESEARCH.md). The M
 - `source/StatisticsParser.Vsix/Commands/StatisticsParserPackage.cs` — `AsyncPackage` subclass with `[PackageRegistration]`, `[ProvideMenuResource]`, `[ProvideToolWindow]` attributes; `InitializeAsync` registers command and tool window
 - `source/StatisticsParser.Vsix/Commands/ParseStatisticsCommand.cs` — `Execute` handler: capture → parse → show window
 
-**Verification**: VSIX loads in SSMS 22 experimental instance; "Parse Statistics" appears on the right-click context menu of an open .sql query window (Messages-tab placement is added in Phase 8a).
+**Verification**: VSIX loads in SSMS 22 experimental instance; "Parse Statistics" appears on the right-click context menu of an open .sql query window. **Correction (Phase 8c)**: SSMS 22's `SqlScriptEditorControl` does not honor the standard VS shell `IDM_VS_CTXT_CODEWIN`; the right-click placement was inert as shipped in Phase 7. Phase 8c adds an SSMS-specific `<CommandPlacement>` parented to `queryWindowContextCommandSet (33F13AC3-…) / queryWindowContextMenu (0x0050)`, which is the correct target. See [PHASE8C-FINDINGS.md](PHASE8C-FINDINGS.md). Messages-tab placement is deferred to a future enhancement.
 
 ---
 
@@ -213,6 +213,16 @@ Implementation follows whichever surface 8a settled on. If the chosen surface re
 **Verification**: captured text matches Messages tab content (manual smoke test in SSMS) for: a single-statement query with `SET STATISTICS IO, TIME ON`, a multi-statement batch, and a query that produces an error.
 
 **Output of 8b**: see [PHASE8B-FINDINGS.md](PHASE8B-FINDINGS.md) — verification results (2026-05-04) and Phase 8c briefing.
+
+### Phase 8c — Right-click placement - COMPLETED
+
+Adds the .sql query body right-click placement and tears down the Phase 8a/8b discovery scaffolding. The Phase 7 verification claim that `Parse Statistics` appeared on .sql query body right-click was incorrect — SSMS 22's `SqlScriptEditorControl` does not honor `IDM_VS_CTXT_CODEWIN`; the placement was inert. The fix uses the SSMS-specific `queryWindowContextMenu` from `queryWindowContextCommandSet (33F13AC3-80BB-4ECB-85BC-225435603A5E)`, sourced from the open-source [SqlFormatter](https://github.com/madskristensen/SqlFormatter) extension's vsct.
+
+**Discovery dead-end (Messages-tab menu)**: two passive `IOleCommandTarget.QueryStatus` capture passes proved the Messages-tab right-click menu exists and is OLE-routed (clean 5-fire fingerprint of 17 commands across 9 command sets), but `QueryStatus` only surfaces commands inside a menu, never the menu's own IDM. Targeted byte/text scans of SSMS editor DLLs and Command Explorer browsing also did not surface the IDM. Deferred to future work — see [PHASE8C-FINDINGS.md](PHASE8C-FINDINGS.md) §Deferred.
+
+**Verification**: right-click in the .sql query body in SSMS 22 → `Parse Statistics` appears, opens the docked **Stats Parser** tool window with captured text matching `Tools → Parse Statistics` byte-for-byte. All three [PHASE8B-FINDINGS.md §Smoke-test results](PHASE8B-FINDINGS.md) scenarios re-verified via the new entry point. `Tools → Dump Menu Capture` no longer exists; `Tools → Parse Statistics` still works as a fallback.
+
+**Output of 8c**: see [PHASE8C-FINDINGS.md](PHASE8C-FINDINGS.md).
 
 ---
 
