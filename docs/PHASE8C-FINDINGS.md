@@ -8,7 +8,7 @@ This appendix records what shipped in Phase 8c, the discovery work that bounded 
 
 | File | Change |
 |---|---|
-| [StatisticsParser.vsct](../source/StatisticsParser.Vsix/StatisticsParser.vsct) | Added `<GuidSymbol name="queryWindowContextCommandSet" value="{33F13AC3-80BB-4ECB-85BC-225435603A5E}">` with `<IDSymbol name="queryWindowContextMenu" value="0x0050" />`, and a `<CommandPlacement>` for `cmdidParseStatistics` parented to that menu. The original `IDM_VS_CTXT_CODEWIN` group placement is kept (zero-cost forward-compat for non-SSMS hosts). Discovery scaffolding (`cmdidDumpMenuCapture` button, Tools-menu placement, IDSymbol) removed. |
+| [VSCommandTable.vsct](../source/StatisticsParser.Vsix/VSCommandTable.vsct) | Added `<GuidSymbol name="queryWindowContextCommandSet" value="{33F13AC3-80BB-4ECB-85BC-225435603A5E}">` with `<IDSymbol name="queryWindowContextMenu" value="0x0050" />`, and a second `<Group>` declaration with the same `(guid, id)` as `ParseStatisticsGroup` parented to `queryWindowContextMenu` (the SqlFormatter two-Group pattern — vsct compiler accepts duplicate `(guid, id)` Group entries when each declares a distinct `<Parent>`). The original `IDM_VS_CTXT_CODEWIN` group declaration is kept (zero-cost forward-compat for non-SSMS hosts). The button placement rides on the group, so no Button-targeted CommandPlacement is needed for the right-click. Discovery scaffolding (`cmdidDumpMenuCapture` button, Tools-menu placement, IDSymbol) removed. |
 | [VSCommandTable.cs](../source/StatisticsParser.Vsix/VSCommandTable.cs) | Added `queryWindowContextCommandSetString` / `queryWindowContextCommandSet` constants in `PackageGuids` and `queryWindowContextMenu = 0x0050` in `PackageIds`. Removed `cmdidDumpMenuCapture`. |
 
 **Deleted**: `Commands/DumpMenuCaptureCommand.cs` (the diagnostic dump trigger).
@@ -35,7 +35,9 @@ Verified against a live SSMS 22 experimental hive (`/RootSuffix Exp`). All three
 2. **Multi-statement batch** (3× `SELECT TOP 200`) — 64 KB segment paging works, ordering preserved, all `SQL Server Execution Times` blocks captured.
 3. **Error path** (`SELECT * FROM dbo.NoSuchTable;`) — `MessagesCaptureStatus.Ok` (the SQL-level error message is still a "message" on the SQL side), `Msg 208` text captured, error renders.
 
-(*Re-run by user when deploying. The behavior is byte-identical to 8b because both entry points call the same `ExecuteAsync` method.*)
+Verified live by user against SSMS 22 Exp on 2026-05-05 — `Parse Statistics` appears on .sql query body right-click; `Tools → Parse Statistics` regression-clean. The behavior is byte-identical to Phase 8b because both entry points reach the same `ExecuteAsync` path.
+
+**Caveat — Phase 8c first-attempt drift**: the placement that originally landed in commit 024080a was a Button-targeted `<CommandPlacement>` parented directly to `queryWindowContextMenu`. That is structurally invalid (the vsct runtime expects `menu → group → button`; a Button placed directly under a Menu is silently dropped). The right-click menu was therefore inert until 2026-05-05, when the placement was rewritten to the SqlFormatter two-`<Group>` pattern documented above. The Phase 8b verification of `Tools → Parse Statistics` was unaffected — that placement (button → `IDG_VS_TOOLS_EXT_TOOLS`, button → group) was always valid.
 
 ## Discovery work for the Messages-tab menu — what was tried and why it stopped
 

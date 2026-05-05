@@ -12,6 +12,9 @@
       <Group guid="guidStatisticsParserCmdSet" id="ParseStatisticsGroup" priority="0x0600">
         <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_CODEWIN" />
       </Group>
+      <Group guid="guidStatisticsParserCmdSet" id="ParseStatisticsGroup" priority="0x0100">
+        <Parent guid="queryWindowContextCommandSet" id="queryWindowContextMenu" />
+      </Group>
     </Groups>
 
     <Buttons>
@@ -30,11 +33,6 @@
   <CommandPlacements>
     <CommandPlacement guid="guidStatisticsParserCmdSet" id="cmdidParseStatistics" priority="0x0100">
       <Parent guid="guidSHLMainMenu" id="IDG_VS_TOOLS_EXT_TOOLS" />
-    </CommandPlacement>
-
-    
-    <CommandPlacement guid="guidStatisticsParserCmdSet" id="cmdidParseStatistics" priority="0x0100">
-      <Parent guid="queryWindowContextCommandSet" id="queryWindowContextMenu" />
     </CommandPlacement>
   </CommandPlacements>
 

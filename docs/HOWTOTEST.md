@@ -25,7 +25,7 @@ $repo = "Z:\Brent Ozar Unlimited\Code\StatisticsParserExtension"
 
 # 2. Uninstall any previous build, then install the fresh one into the Exp hive.
 $installer = "C:\Program Files\Microsoft SQL Server Management Studio 22\Release\Common7\IDE\VSIXInstaller.exe"
-$vsix = "$repo\source\StatisticsParser.Vsix\bin\x64\Debug\net48\StatisticsParser.Vsix.vsix"
+$vsix = "$repo\source\StatisticsParser.Vsix\bin\x64\Debug\StatisticsParser.Vsix.vsix"
 & $installer /quiet /rootSuffix:Exp /uninstall:StatisticsParser.4A9EFF2E-819B-453D-BE4C-5DF7B343C0E7
 & $installer /quiet /rootSuffix:Exp /logFile:"$env:TEMP\statsparser-install.log" $vsix
 
@@ -36,7 +36,7 @@ $vsix = "$repo\source\StatisticsParser.Vsix\bin\x64\Debug\net48\StatisticsParser
 & "C:\Program Files\Microsoft SQL Server Management Studio 22\Release\Common7\IDE\SSMS.exe" /RootSuffix Exp /log
 ```
 
-For a Release build, swap `Configuration=Debug` for `Configuration=Release` in step 1 and adjust the `$vsix` path (`bin\x64\Release\net48\...`).
+For a Release build, swap `Configuration=Debug` for `Configuration=Release` in step 1 and adjust the `$vsix` path (`bin\x64\Release\...`).
 
 ## Verification
 
