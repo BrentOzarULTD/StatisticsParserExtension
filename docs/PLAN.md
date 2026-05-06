@@ -227,11 +227,11 @@ Adds the .sql query body right-click placement and tears down the Phase 8a/8b di
 
 ---
 
-## Phase 9 — Tool Window & WPF UI — SUPERSEDED by Phase 12
+## Phase 9 — WPF Rendering — COMPLETED
 
-The dockable `ToolWindowPane` shell described below was built but replaced by the in-pane tab architecture in Phase 12. The WPF rendering plan in this section (DataGrids, dynamic columns, totals section) is still the target — it just lives inside an `ElementHost` inside a `TabPage` inside `SqlScriptEditorControl.TabPageHost` instead of inside a `ToolWindowPane`.
+The dockable `ToolWindowPane` shell originally described here was replaced by the Phase 12 in-pane tab. Phase 9 ships the structured WPF rendering inside that tab: `StatisticsParserControl.Render(ParseResult)` walks `ParseResult.Data`, building a `ScrollViewer > StackPanel` of per-row WPF elements (rows-affected labels, IO `DataGrid` + Total grid, Time `DataGrid`, error/info/completion lines), then appends a "Totals:" section from `ParseResult.Total`. Helpers live in [Controls/StatisticsViewBuilder.cs](../source/StatisticsParser.Vsix/Controls/StatisticsViewBuilder.cs). Theme keys are pre-wired (folded in from Phase 10) — see Phase 10 for the verification scope that remains.
 
-**Shell** *(historical — replaced)*
+**Shell** *(historical — replaced by Phase 12)*
 - `source/StatisticsParser.Vsix/Windows/StatisticsParserToolWindow.cs` — `ToolWindowPane` subclass hosting `StatisticsParserControl`
 - `source/StatisticsParser.Vsix/Controls/StatisticsParserControl.xaml` + `.xaml.cs` — `ScrollViewer > StackPanel`; public `Render(ParseResult result)` method
 
@@ -263,18 +263,33 @@ PercentRead → "% Logical Reads of Total Reads"
 
 **Empty state**: centered `TextBlock` — "No statistics output found in Messages tab."
 
-**Verification**: End-to-end smoke test in SSMS with single-statement and multi-statement Statistics IO/TIME output.
+### Verification — pending smoke tests
+
+Code shipped; each scenario must be exercised manually in SSMS 22 (experimental hive per [docs/HOWTOTEST.md](HOWTOTEST.md)).
+
+| Scenario | Input | Expected | Status |
+|---|---|---|---|
+| Single statement | Query from [FUNCTIONAL.md §Single Statement](FUNCTIONAL.md) | One IO grid + Total + Time grid + Completion line + Totals section | ✓ verified 2026-05-06 |
+| Multi-statement | Query from [FUNCTIONAL.md §Multiple Statements](FUNCTIONAL.md) | Two IO grids with correct `% Logical Reads`, two Time grids, two Completion lines, alpha-sorted grand IO totals | pending |
+| Empty Messages | New query window, no run | "No statistics output found in Messages tab." centered | pending |
+| Error row | `RAISERROR('boom', 16, 1)` | Bold red `ErrorRow` text appears inline | pending |
+| Auto-refresh | Run query, then re-run with F5 | Tab content swaps to new parse result; SSMS focus behavior unchanged | pending |
+| Capture failure | Switch to a non-SQL editor and invoke command | Diagnostics pane logs the `NoActiveWindow` capture status; tab not modified | pending |
+
+### Documentation reconciliation
+
+- [docs/FUNCTIONAL.md](FUNCTIONAL.md) still describes the dockable tool window in places — update prose to match the in-pane "Parse Statistics" tab shipped via Phase 12.
 
 ---
 
-## Phase 10 — Theme Support
+## Phase 10 — Theme Support — IMPLEMENTED IN PHASE 9; VERIFICATION PENDING
 
-- All colors via `DynamicResource` bound to VS environment resource keys (e.g. `EnvironmentColors.ToolWindowBackgroundColorKey`).
-- No hardcoded color values anywhere in XAML.
-- DataGrid row, header, and border colors bound to VS theme keys.
-- Error text uses `EnvironmentColors.StatusBarErrorColorKey` or equivalent.
+Theme keys were pre-wired during Phase 9 (per user decision). Implementation:
+- `<UserControl.Resources>` in [StatisticsParserControl.xaml](../source/StatisticsParser.Vsix/Controls/StatisticsParserControl.xaml) defines styles for `DataGrid`, `DataGridColumnHeader`, `DataGridCell`, `DataGridRow` bound to `EnvironmentColors` keys (`ToolWindowBackgroundBrushKey`, `ToolWindowTextBrushKey`, `PanelBorderBrushKey`, `SystemHighlightBrushKey`/`SystemHighlightTextBrushKey`) and `HeaderColors.DefaultBrushKey`/`DefaultTextBrushKey` for column headers.
+- `ErrorRow` foreground bound at runtime via `SetResourceReference` to `EnvironmentColors.ToolWindowValidationErrorTextBrushKey` (red on all themes).
+- `Background`/`Foreground` set on the root `UserControl` so all child `TextBlock` elements inherit themed text color.
 
-**Verification**: Switch SSMS theme (Tools > Options > Environment > General) while tool window is open; colors update live.
+**Verification (remaining)**: Switch SSMS theme (Tools > Options > Environment > General → Color theme: Light / Blue / Dark) while the Parse Statistics tab is open; colors update live without re-rendering.
 
 ---
 
@@ -394,6 +409,7 @@ source/
     Controls/
       StatisticsParserControl.xaml
       StatisticsParserControl.xaml.cs
+      StatisticsViewBuilder.cs
     Diagnostics/
       StatisticsParserDiagnosticsPane.cs
 .github/workflows/build.yml

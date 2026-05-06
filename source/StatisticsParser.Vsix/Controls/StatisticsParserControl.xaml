@@ -3,32 +3,70 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:vsui="clr-namespace:Microsoft.VisualStudio.PlatformUI;assembly=Microsoft.VisualStudio.Shell.15.0"
              mc:Ignorable="d"
-             d:DesignHeight="200" d:DesignWidth="400">
-    <Grid>
-        <TextBlock x:Name="EmptyStateText"
-                   Text="No statistics output found in Messages tab."
-                   HorizontalAlignment="Center"
-                   VerticalAlignment="Center"
-                   Margin="24"
-                   TextWrapping="Wrap"
-                   TextAlignment="Center"
-                   Visibility="Visible" />
-        <DockPanel x:Name="CapturedTextPanel"
-                   Visibility="Collapsed"
-                   LastChildFill="True">
-            <TextBlock x:Name="StatusText"
-                       DockPanel.Dock="Top"
-                       Margin="8,8,8,4"
-                       FontWeight="SemiBold" />
-            <TextBox x:Name="CapturedText"
-                     IsReadOnly="True"
-                     TextWrapping="NoWrap"
-                     HorizontalScrollBarVisibility="Auto"
-                     VerticalScrollBarVisibility="Auto"
-                     FontFamily="Consolas"
-                     AcceptsReturn="True"
-                     Margin="8,0,8,8" />
-        </DockPanel>
-    </Grid>
+             d:DesignHeight="200" d:DesignWidth="400"
+             Background="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowBackgroundBrushKey}}"
+             Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}">
+    <UserControl.Resources>
+        <Style TargetType="DataGrid">
+            <Setter Property="AutoGenerateColumns" Value="False" />
+            <Setter Property="IsReadOnly" Value="True" />
+            <Setter Property="HeadersVisibility" Value="Column" />
+            <Setter Property="GridLinesVisibility" Value="All" />
+            <Setter Property="CanUserAddRows" Value="False" />
+            <Setter Property="CanUserDeleteRows" Value="False" />
+            <Setter Property="CanUserReorderColumns" Value="False" />
+            <Setter Property="CanUserResizeRows" Value="False" />
+            <Setter Property="SelectionUnit" Value="Cell" />
+            <Setter Property="Background"
+                    Value="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowBackgroundBrushKey}}" />
+            <Setter Property="Foreground"
+                    Value="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}" />
+            <Setter Property="HorizontalGridLinesBrush"
+                    Value="{DynamicResource {x:Static vsui:EnvironmentColors.PanelBorderBrushKey}}" />
+            <Setter Property="VerticalGridLinesBrush"
+                    Value="{DynamicResource {x:Static vsui:EnvironmentColors.PanelBorderBrushKey}}" />
+            <Setter Property="BorderBrush"
+                    Value="{DynamicResource {x:Static vsui:EnvironmentColors.PanelBorderBrushKey}}" />
+            <Setter Property="RowBackground"
+                    Value="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowBackgroundBrushKey}}" />
+            <Setter Property="AlternatingRowBackground"
+                    Value="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowBackgroundBrushKey}}" />
+        </Style>
+        <Style TargetType="DataGridColumnHeader">
+            <Setter Property="Background"
+                    Value="{DynamicResource {x:Static vsui:HeaderColors.DefaultBrushKey}}" />
+            <Setter Property="Foreground"
+                    Value="{DynamicResource {x:Static vsui:HeaderColors.DefaultTextBrushKey}}" />
+            <Setter Property="BorderBrush"
+                    Value="{DynamicResource {x:Static vsui:EnvironmentColors.PanelBorderBrushKey}}" />
+            <Setter Property="BorderThickness" Value="0,0,1,1" />
+            <Setter Property="Padding" Value="6,4" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+        </Style>
+        <Style TargetType="DataGridCell">
+            <Setter Property="Background"
+                    Value="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowBackgroundBrushKey}}" />
+            <Setter Property="Foreground"
+                    Value="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="Padding" Value="6,2" />
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background"
+                            Value="{DynamicResource {x:Static vsui:EnvironmentColors.SystemHighlightBrushKey}}" />
+                    <Setter Property="Foreground"
+                            Value="{DynamicResource {x:Static vsui:EnvironmentColors.SystemHighlightTextBrushKey}}" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style TargetType="DataGridRow">
+            <Setter Property="Background"
+                    Value="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowBackgroundBrushKey}}" />
+        </Style>
+    </UserControl.Resources>
+    <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+        <StackPanel x:Name="ContentPanel" Margin="12" />
+    </ScrollViewer>
 </UserControl>

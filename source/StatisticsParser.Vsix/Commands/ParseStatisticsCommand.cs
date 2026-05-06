@@ -50,7 +50,7 @@ namespace StatisticsParser.Vsix.Commands
                 return;
             }
 
-            ResultsTabInjector.TryShow(Package, result, parsed, pane);
+            ResultsTabInjector.TryShow(Package, parsed, pane);
         }
     }
 }

@@ -3,7 +3,6 @@ using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using StatisticsParser.Core.Models;
-using StatisticsParser.Vsix.Capture;
 using StatisticsParser.Vsix.Diagnostics;
 
 namespace StatisticsParser.Vsix.InPaneTab
@@ -15,7 +14,6 @@ namespace StatisticsParser.Vsix.InPaneTab
     {
         public static bool TryShow(
             AsyncPackage package,
-            MessagesCaptureResult capture,
             ParseResult parsed,
             StatisticsParserDiagnosticsPane pane)
         {
@@ -29,7 +27,7 @@ namespace StatisticsParser.Vsix.InPaneTab
                         "No active SQL query document. Open a .sql window and run a query first.");
 
                 var supervisor = TabPageSupervisor.GetOrCreate(docView, package, pane);
-                supervisor.RenderInitial(capture, parsed);
+                supervisor.RenderInitial(parsed);
                 return true;
             }
             catch (Exception ex)

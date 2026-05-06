@@ -60,13 +60,13 @@ namespace StatisticsParser.Vsix.InPaneTab
 
         // First-invocation render: ensures the tab exists, fills in the parsed content, selects
         // the new tab (the user just asked for it), and hooks completion events for auto-refresh.
-        public void RenderInitial(MessagesCaptureResult capture, ParseResult parsed)
+        public void RenderInitial(ParseResult parsed)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
             var tabControl = ResolveTabControl();
             EnsureTabExists(tabControl);
-            _wpfControl.ShowCapturedText(capture, parsed.Data.Count);
+            _wpfControl.Render(parsed);
             tabControl.SelectedTab = _tabPage;
 
             if (!_eventsHooked)
@@ -296,7 +296,7 @@ namespace StatisticsParser.Vsix.InPaneTab
             }
 
             EnsureTabExists(tabControl);
-            _wpfControl.ShowCapturedText(capture, parsed.Data.Count);
+            _wpfControl.Render(parsed);
         }
 
         private static FieldInfo FindField(Type t, string name)

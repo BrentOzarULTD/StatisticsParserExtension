@@ -71,6 +71,7 @@
       <DependentUpon>StatisticsParserControl.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Controls\StatisticsViewBuilder.cs" />
     <Compile Include="Diagnostics\StatisticsParserDiagnosticsPane.cs" />
     <Compile Include="InPaneTab\ResultsTabInjector.cs" />
     <Compile Include="InPaneTab\TabPageSupervisor.cs" />

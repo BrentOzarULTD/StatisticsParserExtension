@@ -1,7 +1,6 @@
-using System;
-using System.Windows;
+using System.Collections.Generic;
 using System.Windows.Controls;
-using StatisticsParser.Vsix.Capture;
+using StatisticsParser.Core.Models;
 
 namespace StatisticsParser.Vsix.Controls
 {
@@ -12,45 +11,61 @@ namespace StatisticsParser.Vsix.Controls
             InitializeComponent();
         }
 
-        // Phase 8b: minimum-viable display. Phase 9 replaces this with Render(ParseResult) and
-        // structured DataGrids. Both ShowCapturedText and ShowCaptureError are throwaway.
-        public void ShowCapturedText(MessagesCaptureResult result, int parsedRowCount)
+        public void Render(ParseResult parsed)
         {
-            EmptyStateText.Visibility = Visibility.Collapsed;
-            CapturedTextPanel.Visibility = Visibility.Visible;
-            int charCount = result.Text?.Length ?? 0;
-            StatusText.Text = "Captured " + charCount + " char" + (charCount == 1 ? string.Empty : "s") +
-                              " from Messages tab; parsed " + parsedRowCount +
-                              " row" + (parsedRowCount == 1 ? string.Empty : "s") + ".";
-            CapturedText.Text = result.Text ?? string.Empty;
-        }
+            ContentPanel.Children.Clear();
 
-        public void ShowCaptureError(MessagesCaptureStatus status, Exception error)
-        {
-            CapturedTextPanel.Visibility = Visibility.Collapsed;
-            EmptyStateText.Visibility = Visibility.Visible;
-            EmptyStateText.Text = FormatErrorMessage(status, error);
-        }
-
-        private static string FormatErrorMessage(MessagesCaptureStatus status, Exception error)
-        {
-            switch (status)
+            if (parsed == null || parsed.Data == null || parsed.Data.Count == 0)
             {
-                case MessagesCaptureStatus.NoActiveWindow:
-                    return "No active SQL query window. Open a .sql file, run a query, then try again.";
-                case MessagesCaptureStatus.EmptyMessages:
-                    return "Messages tab is empty. Enable SET STATISTICS IO, TIME ON and run a query first.";
-                case MessagesCaptureStatus.ContractsAssemblyMissing:
-                    return "SSMS BrokeredContracts assembly not found. " +
-                           "This extension targets SSMS 22; verify the installation.";
-                case MessagesCaptureStatus.ProxyUnavailable:
-                    return "Could not reach the SSMS query-editor service. " +
-                           (error?.Message ?? "Try restarting SSMS.");
-                case MessagesCaptureStatus.Failed:
-                    return "Could not read the Messages tab: " + (error?.Message ?? "unknown error");
-                default:
-                    return "Unexpected capture state: " + status;
+                ContentPanel.Children.Add(StatisticsViewBuilder.BuildEmptyState());
+                return;
             }
+
+            var pendingTime = new List<TimeRow>();
+
+            foreach (var row in parsed.Data)
+            {
+                if (row is TimeRow t)
+                {
+                    if (!t.Summary) pendingTime.Add(t);
+                    continue;
+                }
+
+                FlushTimeGroup(pendingTime);
+
+                switch (row)
+                {
+                    case IoGroup g:
+                        ContentPanel.Children.Add(StatisticsViewBuilder.BuildIoSection(g));
+                        break;
+                    case RowsAffectedRow ra:
+                        ContentPanel.Children.Add(StatisticsViewBuilder.BuildRowsAffected(ra.Count));
+                        break;
+                    case ErrorRow er:
+                        ContentPanel.Children.Add(StatisticsViewBuilder.BuildError(er.Text));
+                        break;
+                    case CompletionTimeRow ct:
+                        ContentPanel.Children.Add(StatisticsViewBuilder.BuildCompletion(ct.Timestamp));
+                        break;
+                    case InfoRow ir:
+                        ContentPanel.Children.Add(StatisticsViewBuilder.BuildInfo(ir.Text));
+                        break;
+                }
+            }
+
+            FlushTimeGroup(pendingTime);
+
+            ContentPanel.Children.Add(StatisticsViewBuilder.BuildSectionLabel("Totals:"));
+            ContentPanel.Children.Add(StatisticsViewBuilder.BuildGrandIoSection(parsed.Total.IoTotal));
+            ContentPanel.Children.Add(StatisticsViewBuilder.BuildGrandTimeSection(
+                parsed.Total.CompileTotal, parsed.Total.ExecutionTotal));
+        }
+
+        private void FlushTimeGroup(List<TimeRow> pending)
+        {
+            if (pending.Count == 0) return;
+            ContentPanel.Children.Add(StatisticsViewBuilder.BuildTimeSection(pending));
+            pending.Clear();
         }
     }
 }
