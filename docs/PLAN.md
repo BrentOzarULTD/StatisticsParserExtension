@@ -17,6 +17,7 @@ Phases 1–6 (Core + Tests) run on any OS. Phases 7–11 require Windows with VS
 | 3 | Column zero-suppression | `IoGroup.Columns` excludes columns where every row is zero (matches FUNCTIONAL.md examples) |
 | 4 | SSMS 22 NuGet SDK packages | `Microsoft.VisualStudio.SDK` 17.14.40265 + `Microsoft.VSSDK.BuildTools` 17.14.2120; install target `Microsoft.VisualStudio.Ssms [22.0,]` amd64. See [PHASE7-RESEARCH.md](PHASE7-RESEARCH.md) |
 | 5 | Messages tab context menu GUID | Deferred — Messages tab is not an `IVsOutputWindow` pane in SSMS 22. Initial placement: `IDM_VS_CTXT_CODEWIN`; final placement discovered during Phase 7 experimental-hive prototyping. See [PHASE7-RESEARCH.md](PHASE7-RESEARCH.md) |
+| 6 | Result presentation surface | Spike `spike/in-pane-tab` (2026-05-06) replaced the dockable tool window with a third tab inside `SqlScriptEditorControl.TabPageHost` (a WinForms `TabControl`) hosting a WPF `StatisticsParserControl` via `ElementHost`. Reflection on `TabPageHost` is the only fragile step; the rest is public WinForms API. See Phase 12 |
 
 ---
 
@@ -226,9 +227,11 @@ Adds the .sql query body right-click placement and tears down the Phase 8a/8b di
 
 ---
 
-## Phase 9 — Tool Window & WPF UI
+## Phase 9 — Tool Window & WPF UI — SUPERSEDED by Phase 12
 
-**Shell**
+The dockable `ToolWindowPane` shell described below was built but replaced by the in-pane tab architecture in Phase 12. The WPF rendering plan in this section (DataGrids, dynamic columns, totals section) is still the target — it just lives inside an `ElementHost` inside a `TabPage` inside `SqlScriptEditorControl.TabPageHost` instead of inside a `ToolWindowPane`.
+
+**Shell** *(historical — replaced)*
 - `source/StatisticsParser.Vsix/Windows/StatisticsParserToolWindow.cs` — `ToolWindowPane` subclass hosting `StatisticsParserControl`
 - `source/StatisticsParser.Vsix/Controls/StatisticsParserControl.xaml` + `.xaml.cs` — `ScrollViewer > StackPanel`; public `Render(ParseResult result)` method
 
@@ -290,6 +293,49 @@ PercentRead → "% Logical Reads of Total Reads"
 
 ---
 
+## Phase 12 — In-Pane Tab Architecture - SPIKE COMPLETED (branch `spike/in-pane-tab`)
+
+Replaces the Phase 9 dockable tool-window with a third tab — labeled **"Parse Statistics"** — sitting inside the SSMS query window's Results/Messages tab strip. The change was scoped as a throwaway spike on a branch; behavior validated, branch held back from merge pending real-use bake-in.
+
+### Discovery path
+
+Two-stage probe (deleted from the codebase after the spike confirmed feasibility):
+1. **Visual-tree probe** (`Diagnostics/QueryWindowVisualTreeProbe.cs`, deleted): walked the WPF visual tree starting from `IVsMonitorSelection.SEID_DocumentFrame → __VSFPROPID.VSFPROPID_DocView` and from `Application.Current.MainWindow`. Confirmed the docView is `Microsoft.SqlServer.Management.UI.VSIntegration.Editors.SqlScriptEditorControl` and that no `System.Windows.Controls.TabControl` for Results/Messages exists in the WPF tree.
+2. **DocView reflection + Win32 child enumeration**: dumped all non-trivial members of `SqlScriptEditorControl` and walked Win32 child windows of every `HwndHost`. Confirmed:
+   - `SqlScriptEditorControl.TabPageHost` (public property) is a `DisplaySqlResultsTabControl` instance.
+   - Win32 child windows of the editor's `GenericPaneClientHwndHost` include a `WindowsForms10.SysTabControl32` and adjacent `WindowsForms10.Window` children with text `"Results"` and `"Messages"`. → confirmed WinForms-hosted tab strip; standard `TabControl.TabPages.Add(...)` is the injection path.
+
+### Implementation
+
+| Component | Path |
+|---|---|
+| Entry point | [InPaneTab/ResultsTabInjector.cs](../source/StatisticsParser.Vsix/InPaneTab/ResultsTabInjector.cs) — resolves docView, hands off to a per-docView supervisor |
+| Supervisor | [InPaneTab/TabPageSupervisor.cs](../source/StatisticsParser.Vsix/InPaneTab/TabPageSupervisor.cs) — owns the `TabPage`, hooks query-completion events, auto-refreshes |
+
+Stored in a `ConditionalWeakTable<object, TabPageSupervisor>` keyed on docView so supervisor + event subscriptions get GC'd together with the docView when the query window closes (no explicit unhook needed).
+
+**Auto-refresh hook**: heuristic event matching at runtime. The supervisor enumerates events on `SqlScriptEditorControl` and on its `m_sqlResultsControl` (a `DisplaySQLResultsControl`) and subscribes to any whose name contains `Completed | Executed | Finished | Stopped | Done`. Dynamically-built delegates via `Expression.Lambda(delegateType, ...)` adapt arbitrary signatures. The diagnostics pane reports a failure only if zero events matched (i.e. auto-refresh would be silently broken).
+
+**Re-injection**: SSMS clears its tab strip on query start, so on every completion event the supervisor re-resolves `TabPageHost`, re-creates the `TabPage` if missing, re-captures Messages text via the brokered service, and re-renders the WPF control. Selection is left to SSMS's F5-default focus.
+
+### Behavior verified (2026-05-06)
+
+| Scenario | Expected | Actual |
+|---|---|---|
+| Right-click → Parse Statistics, first time | New "Parse Statistics" tab appears, content shown, tab selected | ✓ |
+| Re-run query (F5) | Tab persists / is re-added; content auto-refreshes | ✓ |
+| F5 while on Messages | Tab content updates silently; user stays on Messages | ✓ |
+| F5 while on Parse Statistics | SSMS focuses Results (default behavior); Parse Statistics content still updates | ✓ |
+
+### Open work before merging spike branch to `dev`
+
+- Real-use bake-in across multiple query windows / re-execution / window close-and-reopen
+- Phase 9 structured-DataGrid rendering (`StatisticsParserControl.Render(ParseResult)`) still pending — currently the in-pane tab shows the minimum-viable text dump from the Phase 8b ship
+- Phase 10 theme support — verify VS resource keys flow across the `ElementHost` boundary
+- Update `docs/FUNCTIONAL.md` if the user-visible UX description still mentions a dockable tool window
+
+---
+
 ## Remaining Risks
 
 | Risk | Mitigation |
@@ -298,6 +344,8 @@ PercentRead → "% Logical Reads of Total Reads"
 | Messages-tab context menu Guid/Id is not statically discoverable (no text VSCT/CTC ships with SSMS 22) | Phase 7 ships with `IDM_VS_CTXT_CODEWIN` placement only; Phase 8a captures the Messages-tab parent menu Guid/Id via debugger-attached `IOleCommandTarget` probing in the experimental hive and adds a `<CommandPlacement>` |
 | `Microsoft.VisualStudio.SDK` v18 metapackage not yet on NuGet (SSMS 22 ships shell 18.0) | Pin to 17.14.40265 — Microsoft Learn confirms VS 2026 accepts 17.x extensions with minimal breaking changes; revisit when v18 is published |
 | Reflection-based Messages-text access (Phase 8a option 3) is fragile across SSMS minor versions | Prefer brokered-contracts (option 1) or completion-event (option 4) if either works; if reflection is the only path, pin the signature in code with a clear comment so version bumps surface as test failures |
+| Phase 12: `SqlScriptEditorControl.TabPageHost` property name is reflection-only and could be renamed in an SSMS minor version | `TabPageSupervisor.GetTabPageHost` tries the public property first, then falls back to `tabPagesHost` / `m_tabPagesHost` private fields; throws a descriptive exception that surfaces in the diagnostics pane when none are found |
+| Phase 12: heuristic event-name matching (`Completed`/`Executed`/`Finished`/`Stopped`/`Done`) could miss the actual query-completion event after an SSMS update | The supervisor writes a clear failure to the diagnostics pane when zero events matched; user-visible symptom is "tab works on first invocation, but doesn't auto-refresh". Recovery is to re-add an event-enumeration debug pass (see deleted [QueryWindowVisualTreeProbe](../source/StatisticsParser.Vsix/Diagnostics/) for the pattern) and refine the pattern list |
 
 ---
 
@@ -331,15 +379,22 @@ source/
   StatisticsParser.Vsix/
     StatisticsParser.Vsix.csproj
     source.extension.vsixmanifest
-    StatisticsParser.vsct
+    VSCommandTable.vsct
+    StatisticsParserPackage.cs
     Commands/
-      StatisticsParserPackage.cs
       ParseStatisticsCommand.cs
+    Capture/
+      ContractTypes.cs
+      MessagesBrokeredClient.cs
+      MessagesCaptureResult.cs
       MessagesTabReader.cs
-    Windows/
-      StatisticsParserToolWindow.cs
+    InPaneTab/
+      ResultsTabInjector.cs
+      TabPageSupervisor.cs
     Controls/
       StatisticsParserControl.xaml
       StatisticsParserControl.xaml.cs
+    Diagnostics/
+      StatisticsParserDiagnosticsPane.cs
 .github/workflows/build.yml
 ```

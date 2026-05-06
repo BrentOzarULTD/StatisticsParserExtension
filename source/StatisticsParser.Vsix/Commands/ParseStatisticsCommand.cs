@@ -1,14 +1,11 @@
 using System;
 using Community.VisualStudio.Toolkit;
-using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
-using Microsoft.VisualStudio.Shell.Interop;
 using StatisticsParser.Core.Models;
 using StatisticsParser.Core.Parsing;
 using StatisticsParser.Vsix.Capture;
-using StatisticsParser.Vsix.Controls;
 using StatisticsParser.Vsix.Diagnostics;
-using StatisticsParser.Vsix.Windows;
+using StatisticsParser.Vsix.InPaneTab;
 using Task = System.Threading.Tasks.Task;
 
 namespace StatisticsParser.Vsix.Commands
@@ -20,13 +17,7 @@ namespace StatisticsParser.Vsix.Commands
         {
             await Package.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            var window = Package.FindToolWindow(typeof(StatisticsParserToolWindow), 0, true)
-                ?? throw new NotSupportedException("Cannot create Statistics Parser tool window.");
-
-            if (window.Frame is IVsWindowFrame frame)
-                ErrorHandler.ThrowOnFailure(frame.Show());
-
-            var control = window.Content as StatisticsParserControl;
+            var pane = StatisticsParserDiagnosticsPane.GetOrCreate(Package);
 
             MessagesCaptureResult result;
             try
@@ -35,16 +26,16 @@ namespace StatisticsParser.Vsix.Commands
             }
             catch (Exception ex)
             {
-                LogFailure("MessagesTabReader.GetMessagesTextAsync", ex);
-                control?.ShowCaptureError(MessagesCaptureStatus.Failed, ex);
+                pane.WriteFailure("MessagesTabReader.GetMessagesTextAsync", ex);
                 return;
             }
 
             if (result.Status != MessagesCaptureStatus.Ok)
             {
                 if (result.Error != null)
-                    LogFailure("Messages capture (" + result.Status + ")", result.Error);
-                control?.ShowCaptureError(result.Status, result.Error);
+                    pane.WriteFailure("Messages capture (" + result.Status + ")", result.Error);
+                else
+                    pane.WriteInfo("Messages capture returned status: " + result.Status);
                 return;
             }
 
@@ -55,27 +46,11 @@ namespace StatisticsParser.Vsix.Commands
             }
             catch (Exception ex)
             {
-                LogFailure("Parser.ParseData", ex);
-                control?.ShowCaptureError(MessagesCaptureStatus.Failed, ex);
+                pane.WriteFailure("Parser.ParseData", ex);
                 return;
             }
 
-            control?.ShowCapturedText(result, parsed.Data.Count);
-        }
-
-        private void LogFailure(string context, Exception ex)
-        {
-            ThreadHelper.ThrowIfNotOnUIThread();
-            try
-            {
-                var pane = StatisticsParserDiagnosticsPane.GetOrCreate(Package);
-                pane.WriteFailure(context, ex);
-            }
-            catch
-            {
-                // Best-effort logging; if even the Output pane is unavailable, the on-screen error in
-                // ShowCaptureError still carries the message.
-            }
+            ResultsTabInjector.TryShow(Package, result, parsed, pane);
         }
     }
 }

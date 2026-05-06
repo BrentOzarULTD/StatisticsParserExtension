@@ -1,5 +1,10 @@
 # Statistics Parser SSMS Extension — Technical Requirements
 
+> Status: extension renders parsed output as a third tab ("Parse Statistics") inside the
+> SSMS query window's `SqlScriptEditorControl` Results/Messages tab strip. The original
+> dockable tool-window approach described in the early architecture has been superseded —
+> see §5 "In-Pane Results Tab" below.
+
 ## Target Environments
 
 | SSMS Version | VS Shell | Bitness | .NET Target | Status |
@@ -33,9 +38,11 @@ StatisticsParserExtension.sln
     │   └── Parsing/              # Parser unit tests
     │
     └── StatisticsParser.Vsix/         # VSIX targeting SSMS 22 (64-bit, VS2026 shell)
-        ├── Commands/             # Context menu command handlers
-        ├── Windows/              # Tool window (ToolWindowPane subclass)
-        ├── Controls/             # WPF UserControls (results view)
+        ├── Commands/             # Right-click command handler (ParseStatisticsCommand)
+        ├── Capture/              # Brokered-service Messages-tab text reader
+        ├── InPaneTab/            # ResultsTabInjector + TabPageSupervisor (in-pane tab plumbing)
+        ├── Controls/             # WPF UserControl rendered inside the in-pane tab
+        ├── Diagnostics/          # Output-pane logger (silent on success)
         └── source.extension.vsixmanifest
 ```
 
@@ -45,46 +52,48 @@ StatisticsParserExtension.sln
 
 SSMS extensions are MEF-based VSIX packages built on the Visual Studio Isolated Shell. The entry point is a `Package` class (subclass of `AsyncPackage` or `Package`) registered via attributes. SSMS loads the package on demand or at IDE startup depending on the `ProvideAutoLoad` rule set.
 
-Key MEF/VS concepts used:
-- **VSPackage**: The root package class, handles initialization and service registration.
-- **.vsct file**: Defines commands (menu items, toolbar buttons) and their placement within command groups. The context menu item on the Messages tab is declared here.
-- **ToolWindowPane**: Base class for custom dockable/tabbed windows inside SSMS.
-- **IVsOutputWindowPane**: VS interface used to read content from the Messages tab.
+Key MEF/VS / SSMS-specific concepts used:
+- **VSPackage**: The root package class, handles initialization and command registration.
+- **.vsct file**: Defines the "Parse Statistics" command and its placement under the SSMS-specific `queryWindowContextCommandSet` (so right-click in the .sql query body shows it). A Tools-menu placement is included as a fallback entry point.
+- **SSMS brokered service `IQueryEditorTabDataServiceBrokered`**: SSMS-22-shipped contracts assembly used to read Messages-tab text. Not a standard VS shell interface — see §3.
+- **`SqlScriptEditorControl`**: SSMS-22 WinForms control hosted as the document view of a SQL query window. Its `TabPageHost` property exposes the Results/Messages WinForms `TabControl` into which we inject our own `TabPage`. Reflection-only — see §5.
+- **`ElementHost` (WindowsFormsIntegration)**: bridges WPF content (our `StatisticsParserControl`) into the WinForms `TabPage`.
 
 ## Key Components
 
 ### 1. SSMS Package Registration
 
-The `Package` class bootstraps the extension:
-- Registers the context menu command in the Messages tab right-click menu.
-- Registers the Stats Parser tool window with SSMS.
-- Acquires references to SSMS services needed at runtime (`IVsOutputWindow`, `DTE2`, etc.).
+The `Package` class ([StatisticsParserPackage.cs](../source/StatisticsParser.Vsix/StatisticsParserPackage.cs)) bootstraps the extension. It:
+- Registers the right-click command via `Community.VisualStudio.Toolkit`'s `RegisterCommandsAsync()`.
+- Acquires SSMS services lazily as the command runs — there are no eagerly-resolved services and no tool window registration.
 
-The `.vsct` file must declare the command group GUID and command ID for placement in the Messages tab context menu. The exact GUID for the Messages tab context menu requires verification against the SSMS SDK or reverse engineering of the SSMS command table — this is a discovery task during initial development.
+The `.vsct` declares two placements for the `Parse Statistics` command: SSMS-specific `queryWindowContextCommandSet (33F13AC3-80BB-4ECB-85BC-225435603A5E) / queryWindowContextMenu (0x0050)` for query-body right-click, and `IDG_VS_TOOLS_EXT_TOOLS` for a Tools-menu fallback. The query-body placement was discovered via Phase 8c — see [PLAN.md](PLAN.md) and [PHASE8C-FINDINGS.md](PHASE8C-FINDINGS.md).
 
 ### 2. Context Menu Integration
 
-A single command — **"Parse Statistics"** — appears in the right-click context menu of the Messages tab.
+A single command — **"Parse Statistics"** — appears in the right-click context menu of the .sql query body, plus on the Tools menu as a fallback. (The Messages-tab right-click menu's GUID/ID were not statically discoverable — see [PHASE8C-FINDINGS.md](PHASE8C-FINDINGS.md).)
 
-Behavior on invocation:
+Behavior on invocation ([ParseStatisticsCommand.cs](../source/StatisticsParser.Vsix/Commands/ParseStatisticsCommand.cs)):
 1. Capture the full text content of the Messages tab (see §3).
 2. Pass the text to the Core parser.
-3. Open (or activate if already open) the Stats Parser tool window.
-4. Render the parsed results in the tool window.
+3. Inject (or refresh) a "Parse Statistics" tab inside the query window's Results/Messages tab strip and render parsed output into it (see §5).
 
-If the Messages tab is empty or contains no recognizable statistics output, the tool window should display an appropriate empty state message.
+On the first invocation per query window, the supervisor also subscribes to SSMS query-completion events so subsequent query executions auto-refresh the tab content without requiring another right-click. Failures are reported to the **Statistics Parser — Diagnostics** Output pane; the pane stays empty when everything works.
 
 ### 3. Messages Tab Content Capture
 
-The Messages tab in SSMS is exposed as an `IVsOutputWindowPane`. To read its content:
+The Messages tab in SSMS 22 is **not** an `IVsOutputWindow` pane. It lives inside `SqlScriptEditorControl` (owned by `SQLEditors.dll`) and is unreachable from any standard VS shell extension surface — see [PHASE7-RESEARCH.md](PHASE7-RESEARCH.md) §Spike 2 for the empirical proof. Capture is instead performed via SSMS's brokered service surface, discovered in Phase 8a.
 
-1. Obtain the `IVsOutputWindow` service via `GetService(typeof(SVsOutputWindow))`.
-2. Look up the Messages tab pane by its well-known GUID (the SSMS Messages pane GUID — requires verification against SSMS SDK documentation).
-3. Call `IVsOutputWindowPane.GetText()` to retrieve the full text as a string.
+**Path** ([Capture/](../source/StatisticsParser.Vsix/Capture/)):
 
-This text is then handed directly to the parser. No user copy/paste is required.
+1. `Microsoft.SqlServer.Management.UI.VSIntegration.SqlEditor.BrokeredContracts.dll` is loaded by reflection from the SSMS install directory ([ContractTypes.cs](../source/StatisticsParser.Vsix/Capture/ContractTypes.cs)).
+2. `SVsBrokeredServiceContainer` provides a full-access `IServiceBroker`; we call `GetProxyAsync<IQueryEditorTabDataServiceBrokered>(QueryEditorTabDataService)` to obtain a brokered proxy ([MessagesBrokeredClient.cs](../source/StatisticsParser.Vsix/Capture/MessagesBrokeredClient.cs)).
+3. The proxy exposes `GetMessagesTabSegmentAsync(int start, int max, CancellationToken)` returning `TextContentSegment { Content, StartPosition, TotalLength }`. We page through 64 KB segments until `TotalLength` characters have been read ([MessagesTabReader.cs](../source/StatisticsParser.Vsix/Capture/MessagesTabReader.cs)).
+4. The captured text is a snapshot at command-fire time. If a query is still running and the tab continues to grow, only the prefix that existed when the first segment returned is captured.
 
-**Risk**: `IVsOutputWindowPane.GetText()` availability depends on SSMS exposing the Messages pane via the standard `IVsOutputWindow` interface. If SSMS uses a custom pane implementation that does not implement `GetText()`, an alternative capture strategy will be needed (e.g., hooking into query execution completion events and accumulating output there). This must be validated early in development.
+The proxy returns `null` when no SQL query window is the active document; the reader surfaces this as `MessagesCaptureStatus.NoActiveWindow`. Per-status messaging is rendered into the WPF control via `StatisticsParserControl.ShowCaptureError(...)`.
+
+**Version-drift recovery**: every brokered type/method is looked up by name through `ContractTypes.GetAsync(...)`, which throws a descriptive `InvalidOperationException` when a name has moved. SSMS minor-version bumps surface immediately at the diagnostics pane rather than as silent failures.
 
 ### 4. Parser Engine (`StatisticsParser.Core`)
 
@@ -238,20 +247,35 @@ Non-English equivalents (Spanish `Tabla`, Italian `Tabella`, etc.) are sourced v
 
 **Grand total IO**: After each IO row is appended to the current group it is also merged into `tableIoGrandTotal` via `ProcessGrandTotal`, which accumulates numeric columns by table name. At the end of the parse, `% Logical Reads` is recomputed against the grand total and the list is sorted alphabetically by table name.
 
-### 5. Stats Parser Tool Window (WPF)
+### 5. In-Pane Results Tab
 
-The Stats Parser output is shown in a dockable SSMS tool window (not a document tab). The window can be docked, floated, or auto-hidden like any standard SSMS window.
+The Stats Parser output is rendered as a third tab — labeled **"Parse Statistics"** — sitting inside the SSMS query window's `SqlScriptEditorControl` Results/Messages tab strip, alongside the native Results and Messages tabs. There is no separate dockable tool window.
 
-The window contains a WPF `ScrollViewer` hosting a `StackPanel` of result sections rendered top-to-bottom in the order they appear in the input:
+This is achieved by reflecting into `SqlScriptEditorControl`'s WinForms `TabPageHost` (a `DisplaySqlResultsTabControl` that derives from or contains a `System.Windows.Forms.TabControl`) and calling its public `TabPages.Add(...)` to insert a new `TabPage`. The TabPage hosts a WinForms-Forms-Integration `ElementHost` whose `Child` is our WPF `StatisticsParserControl`. SSMS code paths and the WinForms TabControl API are stable, public, and well-documented; the only fragile step is the reflection on the `TabPageHost` property name itself. Both `SqlScriptEditorControl.TabPageHost` (public property) and the private `tabPagesHost` field are tried as fallbacks.
+
+#### Components
+
+- [InPaneTab/ResultsTabInjector.cs](../source/StatisticsParser.Vsix/InPaneTab/ResultsTabInjector.cs) — thin entry point. Resolves the active query window's docView via `IVsMonitorSelection.SEID_DocumentFrame → __VSFPROPID.VSFPROPID_DocView`, then delegates to a per-docView `TabPageSupervisor`.
+- [InPaneTab/TabPageSupervisor.cs](../source/StatisticsParser.Vsix/InPaneTab/TabPageSupervisor.cs) — one instance per `SqlScriptEditorControl`. Owns the `TabPage` and the embedded `StatisticsParserControl`. Stored in a `ConditionalWeakTable<object, TabPageSupervisor>` keyed on the docView so the supervisor (and its event subscriptions) get garbage-collected together with the docView when the query window closes — no explicit unhook needed.
+
+#### Lifecycle
+
+1. **First invocation** (right-click → Parse Statistics): the supervisor is created, the `TabPage` is added, the WPF control is filled in, and the new tab is selected. The supervisor reflects across `SqlScriptEditorControl` and its `m_sqlResultsControl` (a `DisplaySQLResultsControl`) for events whose names match the heuristic pattern `Completed | Executed | Finished | Stopped | Done` and subscribes to all matches via dynamically-built delegates (`Expression.Lambda(delegateType, ...)` adapts arbitrary event signatures).
+2. **Subsequent query executions** (F5): SSMS clears its tab strip on query start, so when our hooked completion event fires, the supervisor (a) re-resolves `TabPageHost` via reflection (in case SSMS replaced the tab control instance), (b) re-creates the `TabPage` if it's missing, (c) re-captures Messages text via the brokered service, (d) re-renders the WPF control. Selection is left at whatever SSMS chose — F5 naturally focuses Results, which is the SSMS-default UX we don't fight.
+3. **Query window closes**: docView is disposed, supervisor and event subscriptions are collected.
+
+#### WPF rendering inside the TabPage
+
+The WPF `StatisticsParserControl` ([Controls/StatisticsParserControl.xaml](../source/StatisticsParser.Vsix/Controls/StatisticsParserControl.xaml)) currently shows a minimum-viable display: a status line ("Captured N chars; parsed N rows") plus a read-only monospace `TextBox` containing the captured Messages text. Phase 9 (deferred) replaces this with structured rendering of `ParseResult`:
 
 - **Rows affected**: Bold text label (`100 rows affected`).
-- **IO Statistics table**: WPF `DataGrid` — one row per table, plus a pinned Total row at the bottom. Only columns present in the `IoGroup.Columns` list are shown.
-- **Execution time table**: Small WPF `DataGrid` with CPU and Elapsed columns. CPU and elapsed values are stored by the parser as raw milliseconds (`int`); the UI formats them as `hh:mm:ss.ms` (e.g. `959 ms` → `00:00:00.959`). Rows with `TimeRow.Summary = true` are not rendered as additive entries.
-- **Error messages**: Highlighted text (e.g. red/amber depending on severity).
+- **IO Statistics table**: WPF `DataGrid` — one row per table, plus a pinned Total row at the bottom. Only columns present in `IoGroup.Columns` are shown.
+- **Execution time table**: WPF `DataGrid` with CPU and Elapsed columns; values formatted as `hh:mm:ss.ms`. Rows with `TimeRow.Summary = true` are not rendered as additive entries.
+- **Error messages**: Highlighted text.
 - **Completion time**: Plain text label, timestamp formatted in the local culture.
 - **Totals section** (after all statements): Grand IO total `DataGrid` and grand time total `DataGrid`.
 
-The tool window respects the active SSMS color theme (light/dark/blue) by binding to VS resource keys rather than hardcoded colors.
+The WPF control should respect the active SSMS color theme by binding to VS resource keys (Phase 10). Theming flow across the `ElementHost` boundary is preserved by ambient property inheritance.
 
 **Sorting**: Deferred — see [TODO.md](TODO.md).
 
