@@ -4,10 +4,27 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:vsui="clr-namespace:Microsoft.VisualStudio.PlatformUI;assembly=Microsoft.VisualStudio.Shell.15.0"
+             xmlns:local="clr-namespace:StatisticsParser.Vsix.Controls"
              mc:Ignorable="d"
              d:DesignHeight="200" d:DesignWidth="400"
              Background="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowBackgroundBrushKey}}"
              Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}">
+    <UserControl.CommandBindings>
+        <CommandBinding Command="{x:Static local:StatisticsParserControl.CopyAllOutputCommand}"
+                        Executed="OnCopyAllExecuted"
+                        CanExecute="OnCopyAllCanExecute" />
+    </UserControl.CommandBindings>
+    <UserControl.InputBindings>
+        <KeyBinding Modifiers="Ctrl+Shift" Key="C"
+                    Command="{x:Static local:StatisticsParserControl.CopyAllOutputCommand}" />
+    </UserControl.InputBindings>
+    <UserControl.ContextMenu>
+        <ContextMenu>
+            <MenuItem Header="Copy all output"
+                      InputGestureText="Ctrl+Shift+C"
+                      Command="{x:Static local:StatisticsParserControl.CopyAllOutputCommand}" />
+        </ContextMenu>
+    </UserControl.ContextMenu>
     <UserControl.Resources>
         <Style TargetType="DataGrid">
             <Setter Property="AutoGenerateColumns" Value="False" />
@@ -65,6 +82,19 @@
         <Style TargetType="DataGridRow">
             <Setter Property="Background"
                     Value="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowBackgroundBrushKey}}" />
+        </Style>
+        <!-- Borderless read-only TextBox so non-grid lines (rows-affected, error, info, completion,
+             section labels, debug banner) support drag-select + Ctrl+C while looking identical to
+             the TextBlocks they replaced. -->
+        <Style TargetType="TextBox">
+            <Setter Property="IsReadOnly" Value="True" />
+            <Setter Property="IsReadOnlyCaretVisible" Value="False" />
+            <Setter Property="IsTabStop" Value="False" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Foreground"
+                    Value="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}" />
         </Style>
     </UserControl.Resources>
     <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">

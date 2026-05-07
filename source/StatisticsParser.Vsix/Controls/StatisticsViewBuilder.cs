@@ -46,7 +46,7 @@ namespace StatisticsParser.Vsix.Controls
 
         public static FrameworkElement BuildEmptyState()
         {
-            return new TextBlock
+            return new TextBox
             {
                 Text = "No statistics output found in Messages tab.",
                 HorizontalAlignment = HorizontalAlignment.Center,
@@ -73,7 +73,7 @@ namespace StatisticsParser.Vsix.Controls
             {
                 built = "unknown";
             }
-            return new TextBlock
+            return new TextBox
             {
                 Text = "DEBUG · v" + version + " · built " + built,
                 Opacity = 0.6,
@@ -85,7 +85,7 @@ namespace StatisticsParser.Vsix.Controls
 
         public static FrameworkElement BuildSectionLabel(string text)
         {
-            return new TextBlock
+            return new TextBox
             {
                 Text = text,
                 FontWeight = FontWeights.SemiBold,
@@ -95,7 +95,7 @@ namespace StatisticsParser.Vsix.Controls
 
         public static FrameworkElement BuildRowsAffected(int count)
         {
-            return new TextBlock
+            return new TextBox
             {
                 Text = count.ToString("N0", CultureInfo.CurrentCulture) + " row" + (count == 1 ? string.Empty : "s") + " affected",
                 FontWeight = FontWeights.SemiBold,
@@ -105,7 +105,7 @@ namespace StatisticsParser.Vsix.Controls
 
         public static FrameworkElement BuildError(string text)
         {
-            var tb = new TextBlock
+            var tb = new TextBox
             {
                 Text = text,
                 TextWrapping = TextWrapping.Wrap,
@@ -113,13 +113,13 @@ namespace StatisticsParser.Vsix.Controls
                 Margin = new Thickness(0, 4, 0, 4),
             };
             // Bind Foreground to the VS error brush so theme switches are picked up live.
-            tb.SetResourceReference(TextBlock.ForegroundProperty, EnvironmentColors.ToolWindowValidationErrorTextBrushKey);
+            tb.SetResourceReference(TextBox.ForegroundProperty, EnvironmentColors.ToolWindowValidationErrorTextBrushKey);
             return tb;
         }
 
         public static FrameworkElement BuildInfo(string text)
         {
-            return new TextBlock
+            return new TextBox
             {
                 Text = text,
                 TextWrapping = TextWrapping.Wrap,
@@ -134,7 +134,7 @@ namespace StatisticsParser.Vsix.Controls
             var local = timestamp.ToLocalTime();
             var pattern = CultureInfo.CurrentCulture.DateTimeFormat.ShortDatePattern + " HH:mm:ss.fffffff zzz";
             var formatted = local.ToString(pattern, CultureInfo.CurrentCulture);
-            return new TextBlock
+            return new TextBox
             {
                 Text = "Completion time: " + formatted,
                 Margin = new Thickness(0, 4, 0, 4),

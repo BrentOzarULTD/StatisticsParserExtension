@@ -1,11 +1,24 @@
+using System;
 using System.Collections.Generic;
+using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
+using StatisticsParser.Core.Formatting;
 using StatisticsParser.Core.Models;
 
 namespace StatisticsParser.Vsix.Controls
 {
     public partial class StatisticsParserControl : UserControl
     {
+        // Routed command so Ctrl+Shift+C and the panel's "Copy all output" context-menu item
+        // both invoke the same handler. Bound from XAML via {x:Static local:...}.
+        public static readonly RoutedUICommand CopyAllOutputCommand = new RoutedUICommand(
+            text: "Copy all output",
+            name: nameof(CopyAllOutputCommand),
+            ownerType: typeof(StatisticsParserControl));
+
+        private ParseResult _lastParsed;
+
         public StatisticsParserControl()
         {
             InitializeComponent();
@@ -13,6 +26,8 @@ namespace StatisticsParser.Vsix.Controls
 
         public void Render(ParseResult parsed)
         {
+            _lastParsed = parsed;
+            CommandManager.InvalidateRequerySuggested();
             ContentPanel.Children.Clear();
 
             if (parsed == null || parsed.Data == null || parsed.Data.Count == 0)
@@ -71,6 +86,28 @@ namespace StatisticsParser.Vsix.Controls
             if (pending.Count == 0) return;
             ContentPanel.Children.Add(StatisticsViewBuilder.BuildTimeSection(pending));
             pending.Clear();
+        }
+
+        private void OnCopyAllCanExecute(object sender, CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = _lastParsed?.Data != null && _lastParsed.Data.Count > 0;
+            e.Handled = true;
+        }
+
+        private void OnCopyAllExecuted(object sender, ExecutedRoutedEventArgs e)
+        {
+            var text = TextReportBuilder.Build(_lastParsed);
+            if (string.IsNullOrEmpty(text)) return;
+            try
+            {
+                Clipboard.SetText(text);
+            }
+            catch (Exception)
+            {
+                // Clipboard.SetText can throw if another process holds the clipboard. Silently
+                // swallow — the user can retry, and we don't have a host for an error toast here.
+            }
+            e.Handled = true;
         }
     }
 }
