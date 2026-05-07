@@ -13,7 +13,8 @@
       "PowerShell(dotnet build source/StatisticsParser.Core*)",
       "PowerShell(dotnet restore*)",
       "PowerShell(msbuild source/StatisticsParser.Vsix*)",
-      "PowerShell(msbuild source\\\\StatisticsParser.Vsix*)"
+      "PowerShell(msbuild source\\\\StatisticsParser.Vsix*)",
+      "Read(//z/Brent Ozar Unlimited/Code/StatisticsParserExtension/source/StatisticsParser.Vsix/bin/x64/Debug/**)"
     ]
   }
 }

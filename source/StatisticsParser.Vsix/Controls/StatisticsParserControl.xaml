@@ -29,6 +29,7 @@
                     Value="{DynamicResource {x:Static vsui:EnvironmentColors.PanelBorderBrushKey}}" />
             <Setter Property="BorderBrush"
                     Value="{DynamicResource {x:Static vsui:EnvironmentColors.PanelBorderBrushKey}}" />
+            <Setter Property="BorderThickness" Value="1,1,0,0" />
             <Setter Property="RowBackground"
                     Value="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowBackgroundBrushKey}}" />
             <Setter Property="AlternatingRowBackground"

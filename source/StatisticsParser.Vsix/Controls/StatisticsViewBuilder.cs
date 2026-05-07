@@ -31,17 +31,17 @@ namespace StatisticsParser.Vsix.Controls
                 { IoColumn.Scan,                   ("Scan Count",                          nameof(IoRowDisplay.Scan),                  null) },
                 { IoColumn.Logical,                ("Logical Reads",                       nameof(IoRowDisplay.Logical),               null) },
                 { IoColumn.Physical,               ("Physical Reads",                      nameof(IoRowDisplay.Physical),              null) },
-                { IoColumn.PageServer,             ("Page Server Reads",                   nameof(IoRowDisplay.PageServer),            null) },
-                { IoColumn.ReadAhead,              ("Read-Ahead Reads",                    nameof(IoRowDisplay.ReadAhead),             null) },
-                { IoColumn.PageServerReadAhead,    ("Page Server Read-Ahead Reads",        nameof(IoRowDisplay.PageServerReadAhead),   null) },
-                { IoColumn.LobLogical,             ("LOB Logical Reads",                   nameof(IoRowDisplay.LobLogical),            null) },
-                { IoColumn.LobPhysical,            ("LOB Physical Reads",                  nameof(IoRowDisplay.LobPhysical),           null) },
-                { IoColumn.LobPageServer,          ("LOB Page Server Reads",               nameof(IoRowDisplay.LobPageServer),         null) },
-                { IoColumn.LobReadAhead,           ("LOB Read-Ahead Reads",                nameof(IoRowDisplay.LobReadAhead),          null) },
-                { IoColumn.LobPageServerReadAhead, ("LOB Page Server Read-Ahead Reads",    nameof(IoRowDisplay.LobPageServerReadAhead),null) },
+                { IoColumn.PageServer,             ("Page Server Reads",                  nameof(IoRowDisplay.PageServer),            null) },
+                { IoColumn.ReadAhead,              ("Read-Ahead Reads",                   nameof(IoRowDisplay.ReadAhead),             null) },
+                { IoColumn.PageServerReadAhead,    ("Page Server\nRead-Ahead Reads",       nameof(IoRowDisplay.PageServerReadAhead),   null) },
+                { IoColumn.LobLogical,             ("LOB \nLogical Reads",                  nameof(IoRowDisplay.LobLogical),            null) },
+                { IoColumn.LobPhysical,            ("LOB \nPhysical Reads",                 nameof(IoRowDisplay.LobPhysical),           null) },
+                { IoColumn.LobPageServer,          ("LOB \nPage Server Reads",              nameof(IoRowDisplay.LobPageServer),         null) },
+                { IoColumn.LobReadAhead,           ("LOB \nRead-Ahead Reads",               nameof(IoRowDisplay.LobReadAhead),          null) },
+                { IoColumn.LobPageServerReadAhead, ("LOB Page Server\nRead-Ahead Reads",   nameof(IoRowDisplay.LobPageServerReadAhead),null) },
                 { IoColumn.SegmentReads,           ("Segment Reads",                       nameof(IoRowDisplay.SegmentReads),          null) },
                 { IoColumn.SegmentSkipped,         ("Segment Skipped",                     nameof(IoRowDisplay.SegmentSkipped),        null) },
-                { IoColumn.PercentRead,            ("% Logical Reads of Total Reads",      nameof(IoRowDisplay.PercentReadFormatted), nameof(IoRowDisplay.PercentRead)) },
+                { IoColumn.PercentRead,            ("% Logical Reads\nof Total Reads",     nameof(IoRowDisplay.PercentReadFormatted), nameof(IoRowDisplay.PercentRead)) },
             };
 
         public static FrameworkElement BuildEmptyState()
@@ -57,6 +57,32 @@ namespace StatisticsParser.Vsix.Controls
             };
         }
 
+#if DEBUG
+        // Debug-only banner: surfaces assembly version + on-disk build timestamp so the developer
+        // can tell at a glance whether the running SSMS is loading the latest reinstalled VSIX.
+        public static FrameworkElement BuildDebugVersionLine()
+        {
+            var asm = typeof(StatisticsViewBuilder).Assembly;
+            var version = asm.GetName().Version;
+            string built;
+            try
+            {
+                built = System.IO.File.GetLastWriteTime(asm.Location).ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.CurrentCulture);
+            }
+            catch
+            {
+                built = "unknown";
+            }
+            return new TextBlock
+            {
+                Text = "DEBUG · v" + version + " · built " + built,
+                Opacity = 0.6,
+                FontStyle = FontStyles.Italic,
+                Margin = new Thickness(0, 8, 0, 0),
+            };
+        }
+#endif
+
         public static FrameworkElement BuildSectionLabel(string text)
         {
             return new TextBlock
@@ -71,7 +97,7 @@ namespace StatisticsParser.Vsix.Controls
         {
             return new TextBlock
             {
-                Text = "(" + count.ToString("N0", CultureInfo.CurrentCulture) + " row" + (count == 1 ? string.Empty : "s") + " affected)",
+                Text = count.ToString("N0", CultureInfo.CurrentCulture) + " row" + (count == 1 ? string.Empty : "s") + " affected",
                 FontWeight = FontWeights.SemiBold,
                 Margin = new Thickness(0, 8, 0, 4),
             };
@@ -162,8 +188,9 @@ namespace StatisticsParser.Vsix.Controls
                 CanUserResizeColumns = false,
                 ItemsSource = new[] { totalRow },
                 Margin = new Thickness(0, 0, 0, 8),
-                BorderThickness = new Thickness(1, 0, 1, 1),
+                BorderThickness = new Thickness(1, 0, 0, 0),
                 HorizontalAlignment = HorizontalAlignment.Left,
+                FontWeight = FontWeights.Bold,
             };
             AddIoColumns(totalGrid, columns, includeRowNum, hideRowNumHeader: true);
 
@@ -185,6 +212,7 @@ namespace StatisticsParser.Vsix.Controls
                     Binding = new Binding(nameof(IoRowDisplay.RowNumDisplay)),
                     SortMemberPath = nameof(IoRowDisplay.RowNum),
                     ElementStyle = RightAlignedTextStyle,
+                    HeaderStyle = RightAlignedHeaderStyle,
                 });
             }
 
@@ -205,6 +233,7 @@ namespace StatisticsParser.Vsix.Controls
                     Header = spec.Header,
                     Binding = new Binding(spec.Path) { Converter = IntegerThousandsConverter.Instance },
                     ElementStyle = RightAlignedTextStyle,
+                    HeaderStyle = RightAlignedHeaderStyle,
                 });
             }
             if (columns.Contains(IoColumn.PercentRead))
@@ -216,16 +245,34 @@ namespace StatisticsParser.Vsix.Controls
                     Binding = new Binding(spec.Path),
                     SortMemberPath = spec.SortPath,
                     ElementStyle = RightAlignedTextStyle,
+                    HeaderStyle = RightAlignedHeaderStyle,
                 });
             }
         }
 
         private static readonly Style RightAlignedTextStyle = CreateRightAlignedTextStyle();
+        private static readonly Style RightAlignedHeaderStyle = CreateRightAlignedHeaderStyle();
 
         private static Style CreateRightAlignedTextStyle()
         {
             var style = new Style(typeof(TextBlock));
             style.Setters.Add(new Setter(TextBlock.HorizontalAlignmentProperty, HorizontalAlignment.Right));
+            return style;
+        }
+
+        // HorizontalContentAlignment=Stretch lets the templated TextBlock fill the header cell
+        // width so per-line TextAlignment=Right anchors each line to the right edge — needed
+        // for multi-line headers like "Page Server\nRead-Ahead Reads".
+        private static Style CreateRightAlignedHeaderStyle()
+        {
+            var style = new Style(typeof(DataGridColumnHeader));
+            style.Setters.Add(new Setter(DataGridColumnHeader.HorizontalContentAlignmentProperty, HorizontalAlignment.Stretch));
+            var template = new DataTemplate();
+            var tb = new FrameworkElementFactory(typeof(TextBlock));
+            tb.SetBinding(TextBlock.TextProperty, new Binding());
+            tb.SetValue(TextBlock.TextAlignmentProperty, TextAlignment.Right);
+            template.VisualTree = tb;
+            style.Setters.Add(new Setter(DataGridColumnHeader.ContentTemplateProperty, template));
             return style;
         }
 
@@ -273,7 +320,7 @@ namespace StatisticsParser.Vsix.Controls
 
         public static FrameworkElement BuildGrandTimeSection(TimeTotal compile, TimeTotal execution)
         {
-            var rows = new List<TimeRowDisplay>
+            var dataRows = new List<TimeRowDisplay>
             {
                 new TimeRowDisplay
                 {
@@ -287,14 +334,43 @@ namespace StatisticsParser.Vsix.Controls
                     Cpu = TimeFormatter.FormatMs(execution.CpuMs),
                     Elapsed = TimeFormatter.FormatMs(execution.ElapsedMs),
                 },
-                new TimeRowDisplay
-                {
-                    Label = TotalLabel,
-                    Cpu = TimeFormatter.FormatMs(compile.CpuMs + execution.CpuMs),
-                    Elapsed = TimeFormatter.FormatMs(compile.ElapsedMs + execution.ElapsedMs),
-                },
             };
-            return BuildTimeGrid(rows);
+            var totalRow = new TimeRowDisplay
+            {
+                Label = TotalLabel,
+                Cpu = TimeFormatter.FormatMs(compile.CpuMs + execution.CpuMs),
+                Elapsed = TimeFormatter.FormatMs(compile.ElapsedMs + execution.ElapsedMs),
+            };
+
+            var dataGrid = new DataGrid
+            {
+                CanUserSortColumns = false,
+                CanUserResizeColumns = true,
+                ItemsSource = dataRows,
+                Margin = new Thickness(0, 4, 0, 0),
+                HorizontalAlignment = HorizontalAlignment.Left,
+            };
+            AddTimeColumns(dataGrid);
+
+            var totalGrid = new DataGrid
+            {
+                HeadersVisibility = DataGridHeadersVisibility.None,
+                CanUserSortColumns = false,
+                CanUserResizeColumns = false,
+                ItemsSource = new[] { totalRow },
+                Margin = new Thickness(0, 0, 0, 8),
+                BorderThickness = new Thickness(1, 0, 0, 0),
+                HorizontalAlignment = HorizontalAlignment.Left,
+                FontWeight = FontWeights.Bold,
+            };
+            AddTimeColumns(totalGrid);
+
+            SyncColumnWidths(dataGrid, totalGrid);
+
+            var panel = new StackPanel { Orientation = Orientation.Vertical };
+            panel.Children.Add(dataGrid);
+            panel.Children.Add(totalGrid);
+            return panel;
         }
 
         private static FrameworkElement BuildTimeGrid(IList<TimeRowDisplay> rows)
@@ -307,6 +383,12 @@ namespace StatisticsParser.Vsix.Controls
                 Margin = new Thickness(0, 4, 0, 8),
                 HorizontalAlignment = HorizontalAlignment.Left,
             };
+            AddTimeColumns(grid);
+            return grid;
+        }
+
+        private static void AddTimeColumns(DataGrid grid)
+        {
             grid.Columns.Add(new DataGridTextColumn
             {
                 Header = string.Empty,
@@ -322,7 +404,6 @@ namespace StatisticsParser.Vsix.Controls
                 Header = "Elapsed",
                 Binding = new Binding(nameof(TimeRowDisplay.Elapsed)),
             });
-            return grid;
         }
 
         // Public so XAML data binding can resolve property names. Mutable POCOs by intent — they
