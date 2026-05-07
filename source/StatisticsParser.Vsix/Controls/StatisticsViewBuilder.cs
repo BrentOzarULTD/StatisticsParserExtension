@@ -220,6 +220,8 @@ namespace StatisticsParser.Vsix.Controls
             {
                 Header = "Table",
                 Binding = new Binding(nameof(IoRowDisplay.TableName)),
+                SortMemberPath = nameof(IoRowDisplay.TableName),
+                ElementStyle = TableNameElementStyle,
             });
 
             // Render columns in the order the parser supplied (excluding Table — we always add it
@@ -252,11 +254,25 @@ namespace StatisticsParser.Vsix.Controls
 
         private static readonly Style RightAlignedTextStyle = CreateRightAlignedTextStyle();
         private static readonly Style RightAlignedHeaderStyle = CreateRightAlignedHeaderStyle();
+        private static readonly Style TableNameElementStyle = CreateTableNameElementStyle();
 
         private static Style CreateRightAlignedTextStyle()
         {
             var style = new Style(typeof(TextBlock));
             style.Setters.Add(new Setter(TextBlock.HorizontalAlignmentProperty, HorizontalAlignment.Right));
+            return style;
+        }
+
+        // Per-cell tooltip for the Table column. Bound to IoRowDisplay.TableNameFull, which is
+        // null for any row whose displayed name was not truncated (non-temp tables, or temp tables
+        // with no 7+ underscore run). A null ToolTip suppresses the popup in WPF, so non-temp
+        // cells get no hover behaviour.
+        private static Style CreateTableNameElementStyle()
+        {
+            var style = new Style(typeof(TextBlock));
+            style.Setters.Add(new Setter(
+                TextBlock.ToolTipProperty,
+                new Binding(nameof(IoRowDisplay.TableNameFull))));
             return style;
         }
 
@@ -413,6 +429,9 @@ namespace StatisticsParser.Vsix.Controls
             public int? RowNum { get; set; }
             public string RowNumDisplay { get; set; }
             public string TableName { get; set; }
+            // Full original name used as the Table-cell tooltip when TableName was truncated by
+            // TableNameFormatter; null otherwise (null suppresses the WPF tooltip).
+            public string TableNameFull { get; set; }
             public int Scan { get; set; }
             public int Logical { get; set; }
             public int Physical { get; set; }
@@ -433,7 +452,8 @@ namespace StatisticsParser.Vsix.Controls
             {
                 RowNum = rowNum,
                 RowNumDisplay = rowNum.ToString("N0", CultureInfo.CurrentCulture),
-                TableName = r.TableName,
+                TableName = TableNameFormatter.FormatForDisplay(r.TableName),
+                TableNameFull = TableNameFormatter.IsTruncated(r.TableName) ? r.TableName : null,
                 Scan = r.Scan,
                 Logical = r.Logical,
                 Physical = r.Physical,
@@ -451,27 +471,32 @@ namespace StatisticsParser.Vsix.Controls
                 PercentReadFormatted = PercentFormatter.FormatPercent(r.PercentRead),
             };
 
-            public static IoRowDisplay FromTotal(IoGroupTotal t) => new IoRowDisplay
+            public static IoRowDisplay FromTotal(IoGroupTotal t)
             {
-                RowNum = null,
-                RowNumDisplay = string.Empty,
-                TableName = string.IsNullOrEmpty(t.TableName) ? TotalLabel : t.TableName,
-                Scan = t.Scan,
-                Logical = t.Logical,
-                Physical = t.Physical,
-                PageServer = t.PageServer,
-                ReadAhead = t.ReadAhead,
-                PageServerReadAhead = t.PageServerReadAhead,
-                LobLogical = t.LobLogical,
-                LobPhysical = t.LobPhysical,
-                LobPageServer = t.LobPageServer,
-                LobReadAhead = t.LobReadAhead,
-                LobPageServerReadAhead = t.LobPageServerReadAhead,
-                SegmentReads = t.SegmentReads,
-                SegmentSkipped = t.SegmentSkipped,
-                PercentRead = t.PercentRead,
-                PercentReadFormatted = PercentFormatter.FormatPercent(t.PercentRead),
-            };
+                var rawName = string.IsNullOrEmpty(t.TableName) ? TotalLabel : t.TableName;
+                return new IoRowDisplay
+                {
+                    RowNum = null,
+                    RowNumDisplay = string.Empty,
+                    TableName = TableNameFormatter.FormatForDisplay(rawName),
+                    TableNameFull = TableNameFormatter.IsTruncated(rawName) ? rawName : null,
+                    Scan = t.Scan,
+                    Logical = t.Logical,
+                    Physical = t.Physical,
+                    PageServer = t.PageServer,
+                    ReadAhead = t.ReadAhead,
+                    PageServerReadAhead = t.PageServerReadAhead,
+                    LobLogical = t.LobLogical,
+                    LobPhysical = t.LobPhysical,
+                    LobPageServer = t.LobPageServer,
+                    LobReadAhead = t.LobReadAhead,
+                    LobPageServerReadAhead = t.LobPageServerReadAhead,
+                    SegmentReads = t.SegmentReads,
+                    SegmentSkipped = t.SegmentSkipped,
+                    PercentRead = t.PercentRead,
+                    PercentReadFormatted = PercentFormatter.FormatPercent(t.PercentRead),
+                };
+            }
         }
 
         public sealed class TimeRowDisplay
