@@ -98,7 +98,9 @@ namespace StatisticsParser.Vsix.Controls
             return new TextBox
             {
                 Text = count.ToString("N0", CultureInfo.CurrentCulture) + " row" + (count == 1 ? string.Empty : "s") + " affected",
-                FontWeight = FontWeights.SemiBold,
+                // Bold rather than SemiBold: in Segoe UI at this size the SemiBold comma renders
+                // with a stubby tail that reads as truncated next to the Bold comma in Total rows.
+                FontWeight = FontWeights.Bold,
                 Margin = new Thickness(0, 8, 0, 4),
             };
         }
