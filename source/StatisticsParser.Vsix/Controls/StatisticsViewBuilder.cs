@@ -281,9 +281,23 @@ namespace StatisticsParser.Vsix.Controls
         // HorizontalContentAlignment=Stretch lets the templated TextBlock fill the header cell
         // width so per-line TextAlignment=Right anchors each line to the right edge — needed
         // for multi-line headers like "Page Server\nRead-Ahead Reads".
+        //
+        // Setting an explicit HeaderStyle on a DataGridTextColumn replaces the implicit
+        // DataGridColumnHeader style from StatisticsParserControl.xaml entirely (WPF does not
+        // merge implicit + explicit styles), so the themed Background/Foreground/border setters
+        // must be duplicated here as DynamicResource references — otherwise these headers do not
+        // repaint on theme switch and stay default-white in dark themes.
         private static Style CreateRightAlignedHeaderStyle()
         {
             var style = new Style(typeof(DataGridColumnHeader));
+            style.Setters.Add(new Setter(Control.BackgroundProperty,
+                new DynamicResourceExtension(HeaderColors.DefaultBrushKey)));
+            style.Setters.Add(new Setter(Control.ForegroundProperty,
+                new DynamicResourceExtension(HeaderColors.DefaultTextBrushKey)));
+            style.Setters.Add(new Setter(Control.BorderBrushProperty,
+                new DynamicResourceExtension(EnvironmentColors.PanelBorderBrushKey)));
+            style.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(0, 0, 1, 1)));
+            style.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(6, 4, 6, 4)));
             style.Setters.Add(new Setter(DataGridColumnHeader.HorizontalContentAlignmentProperty, HorizontalAlignment.Stretch));
             var template = new DataTemplate();
             var tb = new FrameworkElementFactory(typeof(TextBlock));
