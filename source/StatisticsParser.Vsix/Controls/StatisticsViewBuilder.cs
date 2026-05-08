@@ -468,15 +468,25 @@ namespace StatisticsParser.Vsix.Controls
             public string PercentReadFormatted { get; set; }
 
             // Display name + tooltip-or-null for the Table cell, branching on the user's
-            // TempTableNames option. "Do not change names" passes the raw parser output through
-            // unchanged with no tooltip; "Shorten names" runs through TableNameFormatter and
-            // captures the original as the tooltip when truncation actually happened.
+            // TempTableNames option. The tooltip is suppressed (null) when the display value
+            // already equals the raw name; otherwise it surfaces the original so users can
+            // distinguish two distinct temps that collapse to the same display string.
             private static (string display, string fullForTooltip) FormatTableName(string raw)
             {
-                if (StatisticsParserOptions.TempTableNames == TempTableNameMode.DoNotChange)
-                    return (raw, null);
-                return (TableNameFormatter.FormatForDisplay(raw),
-                        TableNameFormatter.IsTruncated(raw) ? raw : null);
+                switch (StatisticsParserOptions.TempTableNames)
+                {
+                    case TempTableNameMode.Shorten:
+                        return (TableNameFormatter.FormatForDisplay(raw),
+                                TableNameFormatter.IsTruncated(raw) ? raw : null);
+
+                    case TempTableNameMode.QueryName:
+                        return (TableNameFormatter.StripGeneratedSuffix(raw),
+                                TableNameFormatter.HasGeneratedSuffix(raw) ? raw : null);
+
+                    case TempTableNameMode.DoNotChange:
+                    default:
+                        return (raw, null);
+                }
             }
 
             public static IoRowDisplay FromRow(IoRow r, int rowNum)

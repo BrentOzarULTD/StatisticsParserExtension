@@ -11,6 +11,9 @@ namespace StatisticsParser.Vsix.Options
 
         [Description("Shorten names")]
         Shorten = 1,
+
+        [Description("Query names")]
+        QueryName = 2,
     }
 
     // Cache populated from the Unified Settings store. The earlier BaseOptionModel<T> approach
@@ -27,7 +30,7 @@ namespace StatisticsParser.Vsix.Options
         // Initial values match registration.json defaults so reads before the first Refresh()
         // (e.g. a render that races package init) still produce sensible output.
         public static bool ConvertCompletionTimeToLocalTime;
-        public static TempTableNameMode TempTableNames;
+        public static TempTableNameMode TempTableNames = TempTableNameMode.QueryName;
 
         // GetValueOrThrow returns the registration.json default when no user value is persisted,
         // and only throws on schema mismatch / unregistered moniker — both of which are bugs in
@@ -38,9 +41,10 @@ namespace StatisticsParser.Vsix.Options
                 reader.GetValueOrThrow<bool>(ConvertCompletionTimeToLocalTimeMoniker);
 
             var raw = reader.GetValueOrThrow<string>(TempTableNamesMoniker);
-            TempTableNames = string.Equals(raw, "shorten", StringComparison.OrdinalIgnoreCase)
-                ? TempTableNameMode.Shorten
-                : TempTableNameMode.DoNotChange;
+            TempTableNames =
+                string.Equals(raw, "shorten",   StringComparison.OrdinalIgnoreCase) ? TempTableNameMode.Shorten   :
+                string.Equals(raw, "queryName", StringComparison.OrdinalIgnoreCase) ? TempTableNameMode.QueryName :
+                TempTableNameMode.DoNotChange;
         }
     }
 }

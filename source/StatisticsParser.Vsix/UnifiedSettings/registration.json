@@ -11,11 +11,12 @@
       "type": "string",
       "title": "Temp Table Names",
       "description": "How to render temp table names in the Parse Statistics IO grid.",
-      "default": "doNotChange",
-      "enum": [ "doNotChange", "shorten" ],
+      "default": "queryName",
+      "enum": [ "doNotChange", "shorten", "queryName" ],
       "enumItemLabels": [
         "Do not change names",
-        "Shorten names"
+        "Shorten names",
+        "Query names"
       ]
     }
   },
