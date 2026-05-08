@@ -3,8 +3,12 @@ using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using Community.VisualStudio.Toolkit;
+using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Utilities.UnifiedSettings;
 using StatisticsParser.Core.Formatting;
 using StatisticsParser.Core.Models;
+using StatisticsParser.Vsix.Options;
 
 namespace StatisticsParser.Vsix.Controls
 {
@@ -17,11 +21,55 @@ namespace StatisticsParser.Vsix.Controls
             name: nameof(CopyAllOutputCommand),
             ownerType: typeof(StatisticsParserControl));
 
+        private const string ConvertCompletionTimeMoniker = "statisticsParser.convertCompletionTimeToLocalTime";
+        private const string TempTableNamesMoniker = "statisticsParser.tempTableNamesMode";
+
         private ParseResult _lastParsed;
+        private IDisposable _settingsSubscription;
 
         public StatisticsParserControl()
         {
             InitializeComponent();
+            // Loaded/Unloaded keep the unified-settings change subscription from rooting
+            // a control whose Parse Statistics tab has been removed by SSMS.
+            Loaded += OnLoaded;
+            Unloaded += OnUnloaded;
+        }
+
+        private void OnLoaded(object sender, RoutedEventArgs e)
+        {
+#pragma warning disable VSSDK007
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            {
+                var manager = await VS.GetRequiredServiceAsync<SVsUnifiedSettingsManager, ISettingsManager>();
+                var reader = manager.GetWriter("StatisticsParser");
+                _settingsSubscription = reader.SubscribeToChanges(OnSettingsChanged,
+                    ConvertCompletionTimeMoniker,
+                    TempTableNamesMoniker);
+            }).FileAndForget("StatisticsParser/SubscribeUnified");
+#pragma warning restore VSSDK007
+        }
+
+        private void OnUnloaded(object sender, RoutedEventArgs e)
+        {
+            _settingsSubscription?.Dispose();
+            _settingsSubscription = null;
+        }
+
+        private void OnSettingsChanged(SettingsUpdate update)
+        {
+            // Migration block in registration.json mirrors the unified-settings value into the
+            // same SettingsManager path that BaseOptionModel<StatisticsParserOptions> reads, so
+            // a Load() refresh is enough — no need to read the unified-settings store directly.
+            StatisticsParserOptions.Instance.Load();
+            if (_lastParsed == null) return;
+#pragma warning disable VSSDK007
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                if (_lastParsed != null) Render(_lastParsed);
+            }).FileAndForget("StatisticsParser/OnSettingsChanged");
+#pragma warning restore VSSDK007
         }
 
         public void Render(ParseResult parsed)

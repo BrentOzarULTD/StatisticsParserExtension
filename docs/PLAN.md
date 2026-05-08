@@ -294,6 +294,18 @@ Theme keys were pre-wired during Phase 9 (per user decision). Implementation:
 
 ---
 
+## Phase 10.5 — Options Page (Unified Settings) — PENDING
+
+Replaces the interim `[ProvideOptionPage]` / `UIElementDialogPage` work shipped during the Phase 10 timeframe with the SSMS 22 / VS 2022 **Unified Settings** registration: a top-level **"Statistics Parser"** node in Tools > Options' "All Settings" search UI. No legacy dialog, no click-through to one.
+
+Two settings — `statisticsParser.completionTime.convertToLocalTime` (bool, default `true`) and `statisticsParser.tempTableNames.mode` (enum `doNotChange` / `shorten`, default `shorten`). Implemented via a `UnifiedSettings\registration.json` manifest registered with `[ProvideSettingsManifest]` (attribute in `Microsoft.VisualStudio.Shell.15.0` 17.14.40264, already referenced). The manifest's migration blocks bridge to the same `SettingsManager` store paths Toolkit's `BaseOptionModel<StatisticsParserOptions>` already writes, so `StatisticsParserOptions.Instance.X` reads keep working with no read-site code changes; live re-render moves from `BaseOptionModel.Saved` to `ISettingsReader.SubscribeToChanges`. The Phase-10-era `OptionsDialogPage.cs` / `OptionsView.xaml*` files are deleted; `[ProvideOptionPage]` is removed so no duplicate node lingers under "SQL Server Tools".
+
+Working precedent: SSMS 22 ships `Hadr.registration.json` + `Microsoft.SqlServer.Management.HadrTasks.pkgdef` doing exactly this — top-level "AlwaysOn Dashboard" node via `[ProvideSettingsManifest]`.
+
+See [PHASE10_5-PLAN.md](PHASE10_5-PLAN.md) for the full JSON manifest, csproj/vsixmanifest snippets, live-update wiring, deletion list, verification steps, and risks.
+
+---
+
 ## Phase 11 — Build & CI
 
 `.github/workflows/build.yml` on `windows-latest`:

@@ -11,6 +11,7 @@ using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;
 using StatisticsParser.Core.Formatting;
 using StatisticsParser.Core.Models;
+using StatisticsParser.Vsix.Options;
 
 namespace StatisticsParser.Vsix.Controls
 {
@@ -132,10 +133,12 @@ namespace StatisticsParser.Vsix.Controls
         public static FrameworkElement BuildCompletion(DateTimeOffset timestamp)
         {
             // Locale-aware date with the time kept at tick precision (HH:mm:ss.fffffff) plus the
-            // local UTC offset. Example en-US: "5/27/2025 10:32:37.8122685 -04:00".
-            var local = timestamp.ToLocalTime();
+            // UTC offset. Example en-US: "5/27/2025 10:32:37.8122685 -04:00".
+            var dt = StatisticsParserOptions.Instance.ConvertCompletionTimeToLocalTime
+                ? timestamp.ToLocalTime()
+                : timestamp;
             var pattern = CultureInfo.CurrentCulture.DateTimeFormat.ShortDatePattern + " HH:mm:ss.fffffff zzz";
-            var formatted = local.ToString(pattern, CultureInfo.CurrentCulture);
+            var formatted = dt.ToString(pattern, CultureInfo.CurrentCulture);
             return new TextBox
             {
                 Text = "Completion time: " + formatted,
@@ -464,38 +467,55 @@ namespace StatisticsParser.Vsix.Controls
             public double PercentRead { get; set; }
             public string PercentReadFormatted { get; set; }
 
-            public static IoRowDisplay FromRow(IoRow r, int rowNum) => new IoRowDisplay
+            // Display name + tooltip-or-null for the Table cell, branching on the user's
+            // TempTableNames option. "Do not change names" passes the raw parser output through
+            // unchanged with no tooltip; "Shorten names" runs through TableNameFormatter and
+            // captures the original as the tooltip when truncation actually happened.
+            private static (string display, string fullForTooltip) FormatTableName(string raw)
             {
-                RowNum = rowNum,
-                RowNumDisplay = rowNum.ToString("N0", CultureInfo.CurrentCulture),
-                TableName = TableNameFormatter.FormatForDisplay(r.TableName),
-                TableNameFull = TableNameFormatter.IsTruncated(r.TableName) ? r.TableName : null,
-                Scan = r.Scan,
-                Logical = r.Logical,
-                Physical = r.Physical,
-                PageServer = r.PageServer,
-                ReadAhead = r.ReadAhead,
-                PageServerReadAhead = r.PageServerReadAhead,
-                LobLogical = r.LobLogical,
-                LobPhysical = r.LobPhysical,
-                LobPageServer = r.LobPageServer,
-                LobReadAhead = r.LobReadAhead,
-                LobPageServerReadAhead = r.LobPageServerReadAhead,
-                SegmentReads = r.SegmentReads,
-                SegmentSkipped = r.SegmentSkipped,
-                PercentRead = r.PercentRead,
-                PercentReadFormatted = PercentFormatter.FormatPercent(r.PercentRead),
-            };
+                if (StatisticsParserOptions.Instance.TempTableNames == TempTableNameMode.DoNotChange)
+                    return (raw, null);
+                return (TableNameFormatter.FormatForDisplay(raw),
+                        TableNameFormatter.IsTruncated(raw) ? raw : null);
+            }
+
+            public static IoRowDisplay FromRow(IoRow r, int rowNum)
+            {
+                var (display, full) = FormatTableName(r.TableName);
+                return new IoRowDisplay
+                {
+                    RowNum = rowNum,
+                    RowNumDisplay = rowNum.ToString("N0", CultureInfo.CurrentCulture),
+                    TableName = display,
+                    TableNameFull = full,
+                    Scan = r.Scan,
+                    Logical = r.Logical,
+                    Physical = r.Physical,
+                    PageServer = r.PageServer,
+                    ReadAhead = r.ReadAhead,
+                    PageServerReadAhead = r.PageServerReadAhead,
+                    LobLogical = r.LobLogical,
+                    LobPhysical = r.LobPhysical,
+                    LobPageServer = r.LobPageServer,
+                    LobReadAhead = r.LobReadAhead,
+                    LobPageServerReadAhead = r.LobPageServerReadAhead,
+                    SegmentReads = r.SegmentReads,
+                    SegmentSkipped = r.SegmentSkipped,
+                    PercentRead = r.PercentRead,
+                    PercentReadFormatted = PercentFormatter.FormatPercent(r.PercentRead),
+                };
+            }
 
             public static IoRowDisplay FromTotal(IoGroupTotal t)
             {
                 var rawName = string.IsNullOrEmpty(t.TableName) ? TotalLabel : t.TableName;
+                var (display, full) = FormatTableName(rawName);
                 return new IoRowDisplay
                 {
                     RowNum = null,
                     RowNumDisplay = string.Empty,
-                    TableName = TableNameFormatter.FormatForDisplay(rawName),
-                    TableNameFull = TableNameFormatter.IsTruncated(rawName) ? rawName : null,
+                    TableName = display,
+                    TableNameFull = full,
                     Scan = t.Scan,
                     Logical = t.Logical,
                     Physical = t.Physical,

@@ -75,6 +75,8 @@
     <Compile Include="Diagnostics\StatisticsParserDiagnosticsPane.cs" />
     <Compile Include="InPaneTab\ResultsTabInjector.cs" />
     <Compile Include="InPaneTab\TabPageSupervisor.cs" />
+    <Compile Include="Options\StatisticsParserOptions.cs" />
+    <Compile Include="Options\UnifiedSettingsService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="source.extension.cs">
       <AutoGen>True</AutoGen>
@@ -93,6 +95,12 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="UnifiedSettings\registration.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <VSCTCompile Include="VSCommandTable.vsct">
