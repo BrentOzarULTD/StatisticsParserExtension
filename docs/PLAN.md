@@ -282,14 +282,15 @@ Code shipped; each scenario must be exercised manually in SSMS 22 (experimental 
 
 ---
 
-## Phase 10 — Theme Support — IMPLEMENTED IN PHASE 9; VERIFICATION PENDING
+## Phase 10 — Theme Support — COMPLETED
 
 Theme keys were pre-wired during Phase 9 (per user decision). Implementation:
 - `<UserControl.Resources>` in [StatisticsParserControl.xaml](../source/StatisticsParser.Vsix/Controls/StatisticsParserControl.xaml) defines styles for `DataGrid`, `DataGridColumnHeader`, `DataGridCell`, `DataGridRow` bound to `EnvironmentColors` keys (`ToolWindowBackgroundBrushKey`, `ToolWindowTextBrushKey`, `PanelBorderBrushKey`, `SystemHighlightBrushKey`/`SystemHighlightTextBrushKey`) and `HeaderColors.DefaultBrushKey`/`DefaultTextBrushKey` for column headers.
 - `ErrorRow` foreground bound at runtime via `SetResourceReference` to `EnvironmentColors.ToolWindowValidationErrorTextBrushKey` (red on all themes).
 - `Background`/`Foreground` set on the root `UserControl` so all child `TextBlock` elements inherit themed text color.
+- Right-aligned IO column headers ([StatisticsViewBuilder.cs](../source/StatisticsParser.Vsix/Controls/StatisticsViewBuilder.cs) `CreateRightAlignedHeaderStyle`) re-apply the implicit `DataGridColumnHeader` themed setters (Background/Foreground/BorderBrush/BorderThickness/Padding) via `DynamicResourceExtension`. WPF replaces (does not merge) the implicit style when an explicit `HeaderStyle` is set on a column, so without these setters the numeric headers stayed default-white on theme switch.
 
-**Verification (remaining)**: Switch SSMS theme (Tools > Options > Environment > General → Color theme: Light / Blue / Dark) while the Parse Statistics tab is open; colors update live without re-rendering.
+**Verified 2026-05-08**: Switching SSMS theme (Tools > Options > Environment > General → Color theme: Light / Blue / Dark) while the Parse Statistics tab is open updates all surfaces — IO and Time grid bodies, headers (including right-aligned numeric headers), Total rows, rows-affected/error/info/completion lines — live without re-rendering.
 
 ---
 
