@@ -4,39 +4,19 @@
     "statisticsParser.convertCompletionTimeToLocalTime": {
       "type": "boolean",
       "title": "Convert Completion Time to local time",
-      "description": "Show 'Completion Time' lines from the Messages tab in the local time zone instead of the server's reported value.",
-      "default": true,
-      "migration": {
-        "pass": {
-          "input": {
-            "store": "SettingsManager",
-            "path": "StatisticsParser.Vsix.Options.StatisticsParserOptions.ConvertCompletionTimeToLocalTime"
-          }
-        }
-      }
+      "description": "Show 'Completion Time' lines from the Messages tab in the local time zone instead of the server's reported offset.",
+      "default": false
     },
     "statisticsParser.tempTableNamesMode": {
       "type": "string",
       "title": "Temp Table Names",
       "description": "How to render temp table names in the Parse Statistics IO grid.",
-      "default": "shorten",
+      "default": "doNotChange",
       "enum": [ "doNotChange", "shorten" ],
       "enumItemLabels": [
         "Do not change names",
         "Shorten names"
-      ],
-      "migration": {
-        "enumIntegerToString": {
-          "input": {
-            "store": "SettingsManager",
-            "path": "StatisticsParser.Vsix.Options.StatisticsParserOptions.TempTableNames"
-          },
-          "map": [
-            { "result": "doNotChange", "match": 0 },
-            { "result": "shorten",     "match": 1 }
-          ]
-        }
-      }
+      ]
     }
   },
   "categories": {

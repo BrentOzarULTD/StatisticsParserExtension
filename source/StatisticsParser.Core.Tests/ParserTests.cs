@@ -203,8 +203,10 @@ public class ParserTests
         var expected = DateTimeOffset.Parse(
             "2025-05-27T10:32:37.8122685-04:00",
             System.Globalization.CultureInfo.InvariantCulture,
-            System.Globalization.DateTimeStyles.AssumeUniversal | System.Globalization.DateTimeStyles.AdjustToUniversal);
+            System.Globalization.DateTimeStyles.AssumeUniversal);
         Assert.Equal(expected, completion.Timestamp);
+        // Lock in offset-preservation: parser must NOT normalize to UTC.
+        Assert.Equal(TimeSpan.FromHours(-4), completion.Timestamp.Offset);
     }
 
     [Fact]

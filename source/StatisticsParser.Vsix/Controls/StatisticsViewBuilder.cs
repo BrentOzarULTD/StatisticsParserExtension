@@ -134,7 +134,7 @@ namespace StatisticsParser.Vsix.Controls
         {
             // Locale-aware date with the time kept at tick precision (HH:mm:ss.fffffff) plus the
             // UTC offset. Example en-US: "5/27/2025 10:32:37.8122685 -04:00".
-            var dt = StatisticsParserOptions.Instance.ConvertCompletionTimeToLocalTime
+            var dt = StatisticsParserOptions.ConvertCompletionTimeToLocalTime
                 ? timestamp.ToLocalTime()
                 : timestamp;
             var pattern = CultureInfo.CurrentCulture.DateTimeFormat.ShortDatePattern + " HH:mm:ss.fffffff zzz";
@@ -473,7 +473,7 @@ namespace StatisticsParser.Vsix.Controls
             // captures the original as the tooltip when truncation actually happened.
             private static (string display, string fullForTooltip) FormatTableName(string raw)
             {
-                if (StatisticsParserOptions.Instance.TempTableNames == TempTableNameMode.DoNotChange)
+                if (StatisticsParserOptions.TempTableNames == TempTableNameMode.DoNotChange)
                     return (raw, null);
                 return (TableNameFormatter.FormatForDisplay(raw),
                         TableNameFormatter.IsTruncated(raw) ? raw : null);

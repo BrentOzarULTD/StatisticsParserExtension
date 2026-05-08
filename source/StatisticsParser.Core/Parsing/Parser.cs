@@ -481,10 +481,13 @@ public static class Parser
     private static void HandleCompletionTime(ParseContext ctx, string line)
     {
         var payload = line.Substring(ctx.Lang.CompletionTimeLabel.Length).Trim();
+        // Preserve the server's reported offset on the parsed DateTimeOffset so the rendering
+        // layer can display either the original offset (when "Convert Time" is unchecked) or
+        // the local-time conversion (when checked) from the same Timestamp value.
         if (DateTimeOffset.TryParse(
                 payload,
                 CultureInfo.InvariantCulture,
-                DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
+                DateTimeStyles.AssumeUniversal,
                 out var ts))
         {
             ctx.Result.Data.Add(new CompletionTimeRow { Timestamp = ts });
