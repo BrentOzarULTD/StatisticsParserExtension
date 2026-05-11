@@ -15,6 +15,9 @@
       <Group guid="guidStatisticsParserCmdSet" id="ParseStatisticsGroup" priority="0x0100">
         <Parent guid="queryWindowContextCommandSet" id="queryWindowContextMenu" />
       </Group>
+      <Group guid="guidStatisticsParserCmdSet" id="HelpAboutGroup" priority="0x0700">
+        <Parent guid="guidSHLMainMenu" id="IDM_VS_MENU_HELP" />
+      </Group>
     </Groups>
 
     <Buttons>
@@ -24,6 +27,14 @@
           <ButtonText>Parse Statistics</ButtonText>
           <CanonicalName>Parse Statistics</CanonicalName>
           <LocCanonicalName>Parse Statistics</LocCanonicalName>
+        </Strings>
+      </Button>
+      <Button guid="guidStatisticsParserCmdSet" id="cmdidAboutStatistics" priority="0x0100" type="Button">
+        <Parent guid="guidStatisticsParserCmdSet" id="HelpAboutGroup" />
+        <Strings>
+          <ButtonText>About Statistics Parser</ButtonText>
+          <CanonicalName>About Statistics Parser</CanonicalName>
+          <LocCanonicalName>About Statistics Parser</LocCanonicalName>
         </Strings>
       </Button>
     </Buttons>
@@ -41,7 +52,9 @@
 
     <GuidSymbol name="guidStatisticsParserCmdSet" value="{5B21B934-FB0C-4BEC-A466-CDCB423B16E6}">
       <IDSymbol name="ParseStatisticsGroup" value="0x1020" />
+      <IDSymbol name="HelpAboutGroup" value="0x1021" />
       <IDSymbol name="cmdidParseStatistics" value="0x0100" />
+      <IDSymbol name="cmdidAboutStatistics" value="0x0101" />
     </GuidSymbol>
 
     <GuidSymbol name="queryWindowContextCommandSet" value="{33F13AC3-80BB-4ECB-85BC-225435603A5E}">

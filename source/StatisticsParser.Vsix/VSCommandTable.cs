@@ -29,7 +29,9 @@ namespace StatisticsParser.Vsix
     internal sealed partial class PackageIds
     {
         public const int ParseStatisticsGroup = 0x1020;
+        public const int HelpAboutGroup = 0x1021;
         public const int cmdidParseStatistics = 0x0100;
+        public const int cmdidAboutStatistics = 0x0101;
         public const int queryWindowContextMenu = 0x0050;
     }
 }

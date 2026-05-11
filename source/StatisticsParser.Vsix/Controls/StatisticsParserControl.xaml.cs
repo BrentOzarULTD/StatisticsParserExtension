@@ -3,10 +3,13 @@ using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
 using Community.VisualStudio.Toolkit;
+using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Utilities.UnifiedSettings;
 using StatisticsParser.Core.Formatting;
 using StatisticsParser.Core.Models;
@@ -17,11 +20,16 @@ namespace StatisticsParser.Vsix.Controls
 {
     public partial class StatisticsParserControl : UserControl
     {
-        // Routed command so Ctrl+Shift+C and the panel's "Copy all output" context-menu item
+        // Routed command so Ctrl+Shift+C and the panel's "Copy All" context-menu item
         // both invoke the same handler. Bound from XAML via {x:Static local:...}.
         public static readonly RoutedUICommand CopyAllOutputCommand = new RoutedUICommand(
-            text: "Copy all output",
+            text: "Copy All",
             name: nameof(CopyAllOutputCommand),
+            ownerType: typeof(StatisticsParserControl));
+
+        public static readonly RoutedUICommand ShowAboutCommand = new RoutedUICommand(
+            text: "About Statistics Parser",
+            name: nameof(ShowAboutCommand),
             ownerType: typeof(StatisticsParserControl));
 
         private ParseResult _lastParsed;
@@ -195,6 +203,21 @@ namespace StatisticsParser.Vsix.Controls
                 // Clipboard.SetText can throw if another process holds the clipboard. Silently
                 // swallow — the user can retry, and we don't have a host for an error toast here.
             }
+            e.Handled = true;
+        }
+
+        private void OnShowAboutExecuted(object sender, ExecutedRoutedEventArgs e)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            var dlg = new AboutDialog();
+            IntPtr owner = IntPtr.Zero;
+            if (Package.GetGlobalService(typeof(SVsUIShell)) is IVsUIShell uiShell
+                && ErrorHandler.Succeeded(uiShell.GetDialogOwnerHwnd(out owner))
+                && owner != IntPtr.Zero)
+            {
+                new WindowInteropHelper(dlg).Owner = owner;
+            }
+            dlg.ShowDialog();
             e.Handled = true;
         }
     }

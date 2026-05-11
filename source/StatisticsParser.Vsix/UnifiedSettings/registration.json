@@ -42,7 +42,7 @@
   "categories": {
     "statisticsParser": {
       "title": "Statistics Parser",
-      "description": "Transforms STATISTICS IO / STATISTICS TIME output from the Messages tab into a structured, readable view."
+      "description": "Transforms STATISTICS IO / STATISTICS TIME output from the Messages tab into a structured, readable view. Brought to you by the folks at Brent Ozar Unlimited."
     }
   }
 }

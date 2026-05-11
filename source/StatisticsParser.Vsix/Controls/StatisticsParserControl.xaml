@@ -13,6 +13,8 @@
         <CommandBinding Command="{x:Static local:StatisticsParserControl.CopyAllOutputCommand}"
                         Executed="OnCopyAllExecuted"
                         CanExecute="OnCopyAllCanExecute" />
+        <CommandBinding Command="{x:Static local:StatisticsParserControl.ShowAboutCommand}"
+                        Executed="OnShowAboutExecuted" />
     </UserControl.CommandBindings>
     <UserControl.InputBindings>
         <KeyBinding Modifiers="Ctrl+Shift" Key="C"
@@ -20,9 +22,14 @@
     </UserControl.InputBindings>
     <UserControl.ContextMenu>
         <ContextMenu>
-            <MenuItem Header="Copy all output"
+            <MenuItem Header="Copy All"
                       InputGestureText="Ctrl+Shift+C"
-                      Command="{x:Static local:StatisticsParserControl.CopyAllOutputCommand}" />
+                      Command="{x:Static local:StatisticsParserControl.CopyAllOutputCommand}"
+                      CommandTarget="{Binding PlacementTarget, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+            <Separator />
+            <MenuItem Header="About Statistics Parser..."
+                      Command="{x:Static local:StatisticsParserControl.ShowAboutCommand}"
+                      CommandTarget="{Binding PlacementTarget, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
         </ContextMenu>
     </UserControl.ContextMenu>
     <UserControl.Resources>
