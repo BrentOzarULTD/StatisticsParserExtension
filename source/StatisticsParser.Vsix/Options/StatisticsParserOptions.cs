@@ -16,6 +16,14 @@ namespace StatisticsParser.Vsix.Options
         QueryName = 2,
     }
 
+    public enum FontSizeOption
+    {
+        Small = 0,
+        Normal = 1,
+        Large = 2,
+        ExtraLarge = 3,
+    }
+
     // Cache populated from the Unified Settings store. The earlier BaseOptionModel<T> approach
     // wrote to Microsoft.VisualStudio.Settings.SettingsStore — a different store from the one
     // SSMS's Tools > Options page binds to via registration.json — so user changes never reached
@@ -26,11 +34,24 @@ namespace StatisticsParser.Vsix.Options
     {
         public const string ConvertCompletionTimeToLocalTimeMoniker = "statisticsParser.convertCompletionTimeToLocalTime";
         public const string TempTableNamesMoniker = "statisticsParser.tempTableNamesMode";
+        public const string FontSizeMoniker = "statisticsParser.fontSize";
 
         // Initial values match registration.json defaults so reads before the first Refresh()
         // (e.g. a render that races package init) still produce sensible output.
         public static bool ConvertCompletionTimeToLocalTime;
         public static TempTableNameMode TempTableNames = TempTableNameMode.QueryName;
+        public static FontSizeOption FontSize = FontSizeOption.Normal;
+
+        public static double ScaleFactor(FontSizeOption option)
+        {
+            switch (option)
+            {
+                case FontSizeOption.Small: return 0.85;
+                case FontSizeOption.Large: return 1.25;
+                case FontSizeOption.ExtraLarge: return 1.5;
+                default: return 1.0;
+            }
+        }
 
         // GetValueOrThrow returns the registration.json default when no user value is persisted,
         // and only throws on schema mismatch / unregistered moniker — both of which are bugs in
@@ -45,6 +66,13 @@ namespace StatisticsParser.Vsix.Options
                 string.Equals(raw, "shorten",   StringComparison.OrdinalIgnoreCase) ? TempTableNameMode.Shorten   :
                 string.Equals(raw, "queryName", StringComparison.OrdinalIgnoreCase) ? TempTableNameMode.QueryName :
                 TempTableNameMode.DoNotChange;
+
+            var rawFont = reader.GetValueOrThrow<string>(FontSizeMoniker);
+            FontSize =
+                string.Equals(rawFont, "small",      StringComparison.OrdinalIgnoreCase) ? FontSizeOption.Small      :
+                string.Equals(rawFont, "large",      StringComparison.OrdinalIgnoreCase) ? FontSizeOption.Large      :
+                string.Equals(rawFont, "extraLarge", StringComparison.OrdinalIgnoreCase) ? FontSizeOption.ExtraLarge :
+                FontSizeOption.Normal;
         }
     }
 }

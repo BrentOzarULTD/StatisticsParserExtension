@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using Community.VisualStudio.Toolkit;
+using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Utilities.UnifiedSettings;
 using StatisticsParser.Core.Formatting;
@@ -41,9 +43,12 @@ namespace StatisticsParser.Vsix.Controls
                 var manager = await VS.GetRequiredServiceAsync<SVsUnifiedSettingsManager, ISettingsManager>();
                 var reader = manager.GetWriter("StatisticsParser");
                 StatisticsParserOptions.Refresh(reader);
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                ApplyFontSettings();
                 _settingsSubscription = reader.SubscribeToChanges(OnSettingsChanged,
                     StatisticsParserOptions.ConvertCompletionTimeToLocalTimeMoniker,
-                    StatisticsParserOptions.TempTableNamesMoniker);
+                    StatisticsParserOptions.TempTableNamesMoniker,
+                    StatisticsParserOptions.FontSizeMoniker);
             }).FileAndForget("StatisticsParser/SubscribeUnified");
 #pragma warning restore VSSDK007
         }
@@ -62,11 +67,29 @@ namespace StatisticsParser.Vsix.Controls
                 var manager = await VS.GetRequiredServiceAsync<SVsUnifiedSettingsManager, ISettingsManager>();
                 var reader = manager.GetWriter("StatisticsParser");
                 StatisticsParserOptions.Refresh(reader);
-                if (_lastParsed == null) return;
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                ApplyFontSettings();
                 if (_lastParsed != null) Render(_lastParsed);
             }).FileAndForget("StatisticsParser/OnSettingsChanged");
 #pragma warning restore VSSDK007
+        }
+
+        private void ApplyFontSettings()
+        {
+            // Pull the user's VS Environment Font baseline so Small/Normal/Large/Extra Large are
+            // relative to whatever the user already configured under Tools > Options > Environment
+            // > Fonts and Colors. Falls back to WPF's default 12 DIP when the resource cannot be
+            // resolved (e.g. when hosted outside the VS shell during tests).
+            double baseSize = 12.0;
+            var sizeResource = TryFindResource(VsFonts.EnvironmentFontSizeKey);
+            if (sizeResource is double d) baseSize = d;
+
+            FontSize = baseSize * StatisticsParserOptions.ScaleFactor(StatisticsParserOptions.FontSize);
+
+            if (TryFindResource(VsFonts.EnvironmentFontFamilyKey) is FontFamily family)
+            {
+                FontFamily = family;
+            }
         }
 
         public void Render(ParseResult parsed)

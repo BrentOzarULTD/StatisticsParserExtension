@@ -306,6 +306,12 @@ See [PHASE10_5-PLAN.md](PHASE10_5-PLAN.md) for the full JSON manifest, csproj/vs
 
 ---
 
+## Phase 10.6 — Font Size Option — COMPLETED
+
+Adds a third Unified Settings entry, `statisticsParser.fontSize` (enum `small` / `normal` / `large` / `extraLarge`, default `normal`), that scales the Parse Statistics tab relative to the VS Environment Font. Implementation sets `FontSize` and `FontFamily` on the root `UserControl` from [StatisticsParserControl.xaml.cs](../source/StatisticsParser.Vsix/Controls/StatisticsParserControl.xaml.cs) `ApplyFontSettings()`, reading `VsFonts.EnvironmentFontSizeKey` / `VsFonts.EnvironmentFontFamilyKey` and multiplying by the scale factor from `StatisticsParserOptions.ScaleFactor` (0.85 / 1.0 / 1.25 / 1.5). WPF property inheritance carries the values to every `TextBox`, `DataGrid` cell, header, and totals row — no changes to [StatisticsViewBuilder.cs](../source/StatisticsParser.Vsix/Controls/StatisticsViewBuilder.cs) or [StatisticsParserControl.xaml](../source/StatisticsParser.Vsix/Controls/StatisticsParserControl.xaml). Live re-application piggybacks on the existing `SubscribeToChanges` wiring; the new moniker is added to the subscription set in `OnLoaded`.
+
+---
+
 ## Phase 11 — Build & CI
 
 `.github/workflows/build.yml` on `windows-latest`:

@@ -18,6 +18,19 @@
         "Shorten names",
         "Query names"
       ]
+    },
+    "statisticsParser.fontSize": {
+      "type": "string",
+      "title": "Font Size",
+      "description": "Font size for the Parse Statistics tab, relative to the Visual Studio Environment Font.",
+      "default": "normal",
+      "enum": [ "extraLarge", "large", "normal", "small" ],
+      "enumItemLabels": [
+        "Extra Large",
+        "Large",
+        "Normal",
+        "Small"
+      ]
     }
   },
   "categories": {
