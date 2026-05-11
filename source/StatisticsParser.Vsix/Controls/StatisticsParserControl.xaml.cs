@@ -10,6 +10,7 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Utilities.UnifiedSettings;
 using StatisticsParser.Core.Formatting;
 using StatisticsParser.Core.Models;
+using StatisticsParser.Core.Parsing;
 using StatisticsParser.Vsix.Options;
 
 namespace StatisticsParser.Vsix.Controls
@@ -24,6 +25,10 @@ namespace StatisticsParser.Vsix.Controls
             ownerType: typeof(StatisticsParserControl));
 
         private ParseResult _lastParsed;
+        // Captured Messages text from the most recent Render call. Held so that an option change
+        // affecting parser output (currently only SuppressZeroColumns) can re-parse and refresh
+        // without requiring the user to rerun the query.
+        private string _lastText;
         private IDisposable _settingsSubscription;
 
         public StatisticsParserControl()
@@ -48,7 +53,8 @@ namespace StatisticsParser.Vsix.Controls
                 _settingsSubscription = reader.SubscribeToChanges(OnSettingsChanged,
                     StatisticsParserOptions.ConvertCompletionTimeToLocalTimeMoniker,
                     StatisticsParserOptions.TempTableNamesMoniker,
-                    StatisticsParserOptions.FontSizeMoniker);
+                    StatisticsParserOptions.FontSizeMoniker,
+                    StatisticsParserOptions.SuppressZeroColumnsMoniker);
             }).FileAndForget("StatisticsParser/SubscribeUnified");
 #pragma warning restore VSSDK007
         }
@@ -61,6 +67,13 @@ namespace StatisticsParser.Vsix.Controls
 
         private void OnSettingsChanged(SettingsUpdate update)
         {
+            // Only SuppressZeroColumns affects parser output — the other three options just
+            // change rendering. Avoid re-parsing for those, otherwise every Font Size / Temp
+            // Table Names / Completion Time toggle drags the (potentially large) Messages
+            // text through Parser.ParseData on the UI thread.
+            bool needsReparse = update?.ChangedSettingMonikers != null
+                && update.ChangedSettingMonikers.Contains(StatisticsParserOptions.SuppressZeroColumnsMoniker);
+
 #pragma warning disable VSSDK007
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
@@ -69,7 +82,10 @@ namespace StatisticsParser.Vsix.Controls
                 StatisticsParserOptions.Refresh(reader);
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 ApplyFontSettings();
-                if (_lastParsed != null) Render(_lastParsed);
+                if (needsReparse && _lastText != null)
+                    Render(_lastText, Parser.ParseData(_lastText, ParserLanguage.English, StatisticsParserOptions.SuppressZeroColumns));
+                else if (_lastParsed != null)
+                    Render(_lastText, _lastParsed);
             }).FileAndForget("StatisticsParser/OnSettingsChanged");
 #pragma warning restore VSSDK007
         }
@@ -92,8 +108,12 @@ namespace StatisticsParser.Vsix.Controls
             }
         }
 
-        public void Render(ParseResult parsed)
+        // text is the raw Messages-tab string the parsed result came from. May be null when the
+        // caller has no text to hand back (e.g. an internal re-render with already-parsed data);
+        // when null, OnSettingsChanged falls back to re-rendering _lastParsed without re-parsing.
+        public void Render(string text, ParseResult parsed)
         {
+            _lastText = text;
             _lastParsed = parsed;
             CommandManager.InvalidateRequerySuggested();
             ContentPanel.Children.Clear();

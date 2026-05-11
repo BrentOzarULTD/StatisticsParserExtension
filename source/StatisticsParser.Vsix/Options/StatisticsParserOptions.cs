@@ -35,12 +35,14 @@ namespace StatisticsParser.Vsix.Options
         public const string ConvertCompletionTimeToLocalTimeMoniker = "statisticsParser.convertCompletionTimeToLocalTime";
         public const string TempTableNamesMoniker = "statisticsParser.tempTableNamesMode";
         public const string FontSizeMoniker = "statisticsParser.fontSize";
+        public const string SuppressZeroColumnsMoniker = "statisticsParser.suppressZeroColumns";
 
         // Initial values match registration.json defaults so reads before the first Refresh()
         // (e.g. a render that races package init) still produce sensible output.
         public static bool ConvertCompletionTimeToLocalTime;
         public static TempTableNameMode TempTableNames = TempTableNameMode.QueryName;
         public static FontSizeOption FontSize = FontSizeOption.Normal;
+        public static bool SuppressZeroColumns = true;
 
         public static double ScaleFactor(FontSizeOption option)
         {
@@ -73,6 +75,8 @@ namespace StatisticsParser.Vsix.Options
                 string.Equals(rawFont, "large",      StringComparison.OrdinalIgnoreCase) ? FontSizeOption.Large      :
                 string.Equals(rawFont, "extraLarge", StringComparison.OrdinalIgnoreCase) ? FontSizeOption.ExtraLarge :
                 FontSizeOption.Normal;
+
+            SuppressZeroColumns = reader.GetValueOrThrow<bool>(SuppressZeroColumnsMoniker);
         }
     }
 }

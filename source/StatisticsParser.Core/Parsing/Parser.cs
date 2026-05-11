@@ -24,9 +24,12 @@ public static class Parser
     private static readonly char[] SegmentTrimChars = { '.', ' ', '\t' };
 
     public static ParseResult ParseData(string text)
-        => ParseData(text, ParserLanguage.English);
+        => ParseData(text, ParserLanguage.English, suppressZeroColumns: true);
 
     public static ParseResult ParseData(string text, ParserLanguage lang)
+        => ParseData(text, lang, suppressZeroColumns: true);
+
+    public static ParseResult ParseData(string text, ParserLanguage lang, bool suppressZeroColumns)
     {
         var result = new ParseResult();
         if (string.IsNullOrEmpty(text))
@@ -59,7 +62,7 @@ public static class Parser
 
             if (ctx.PrevRowType == RowType.IO && rowType != RowType.IO && ctx.CurrentGroup != null)
             {
-                FinalizeIoGroup(ctx.CurrentGroup, ctx.GrandTotalColumns);
+                FinalizeIoGroup(ctx.CurrentGroup, ctx.GrandTotalColumns, suppressZeroColumns);
                 ctx.CurrentGroup = null;
             }
 
@@ -91,11 +94,11 @@ public static class Parser
 
         if (ctx.CurrentGroup != null)
         {
-            FinalizeIoGroup(ctx.CurrentGroup, ctx.GrandTotalColumns);
+            FinalizeIoGroup(ctx.CurrentGroup, ctx.GrandTotalColumns, suppressZeroColumns);
             ctx.CurrentGroup = null;
         }
 
-        FinalizeGrandTotal(result.Total.IoTotal);
+        FinalizeGrandTotal(result.Total.IoTotal, suppressZeroColumns);
         result.TableCount = ctx.TableCount;
         return result;
     }
@@ -255,7 +258,7 @@ public static class Parser
         entry.SegmentSkipped += row.SegmentSkipped;
     }
 
-    internal static void FinalizeIoGroup(IoGroup group, List<IoColumn> grandTotalColumns)
+    internal static void FinalizeIoGroup(IoGroup group, List<IoColumn> grandTotalColumns, bool suppressZero)
     {
         if (group.Data.Count == 0) return;
 
@@ -289,7 +292,8 @@ public static class Parser
 
         group.Total = total;
 
-        SuppressZeroColumns(group);
+        if (suppressZero)
+            SuppressZeroColumns(group);
 
         foreach (var c in group.Columns)
         {
@@ -298,7 +302,7 @@ public static class Parser
         }
     }
 
-    internal static void FinalizeGrandTotal(IoGrandTotal gt)
+    internal static void FinalizeGrandTotal(IoGrandTotal gt, bool suppressZero)
     {
         if (gt.Data.Count == 0) return;
 
@@ -330,6 +334,8 @@ public static class Parser
         }
 
         gt.Total = total;
+
+        if (!suppressZero) return;
 
         var keep = new List<IoColumn>(gt.Columns.Count);
         var hasPercentRead = false;

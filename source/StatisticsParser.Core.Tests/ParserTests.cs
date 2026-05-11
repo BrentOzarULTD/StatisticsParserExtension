@@ -97,6 +97,28 @@ public class ParserTests
     }
 
     [Fact]
+    public void ParseData_SuppressZeroColumnsFalse_RetainsAllZeroLobColumns()
+    {
+        // First group's LOB columns are all zero; default behavior drops them. Opting out keeps
+        // them so users who want a stable column layout across queries can see every column.
+        var result = Parser.ParseData(MultiBatchSample, ParserLanguage.English, suppressZeroColumns: false);
+        var group = result.Data.OfType<IoGroup>().First();
+
+        Assert.Contains(IoColumn.LobLogical, group.Columns);
+        Assert.Contains(IoColumn.LobPhysical, group.Columns);
+        Assert.Contains(IoColumn.LobReadAhead, group.Columns);
+
+        // Grand total accumulates from per-group columns, so the same opt-out flows through.
+        Assert.Contains(IoColumn.LobLogical, result.Total.IoTotal.Columns);
+        Assert.Contains(IoColumn.LobPhysical, result.Total.IoTotal.Columns);
+        Assert.Contains(IoColumn.LobReadAhead, result.Total.IoTotal.Columns);
+
+        // PercentRead must still sit at the end of the column list — the WPF view appends it last.
+        Assert.Equal(IoColumn.PercentRead, group.Columns[group.Columns.Count - 1]);
+        Assert.Equal(IoColumn.PercentRead, result.Total.IoTotal.Columns[result.Total.IoTotal.Columns.Count - 1]);
+    }
+
+    [Fact]
     public void ParseData_MultiBatchSample_FirstGroupTotalsRollUp()
     {
         var result = Parser.ParseData(MultiBatchSample);

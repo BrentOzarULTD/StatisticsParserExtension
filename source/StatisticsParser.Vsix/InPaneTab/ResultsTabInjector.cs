@@ -14,6 +14,7 @@ namespace StatisticsParser.Vsix.InPaneTab
     {
         public static bool TryShow(
             AsyncPackage package,
+            string text,
             ParseResult parsed,
             StatisticsParserDiagnosticsPane pane)
         {
@@ -27,7 +28,7 @@ namespace StatisticsParser.Vsix.InPaneTab
                         "No active SQL query document. Open a .sql window and run a query first.");
 
                 var supervisor = TabPageSupervisor.GetOrCreate(docView, package, pane);
-                supervisor.RenderInitial(parsed);
+                supervisor.RenderInitial(text, parsed);
                 return true;
             }
             catch (Exception ex)

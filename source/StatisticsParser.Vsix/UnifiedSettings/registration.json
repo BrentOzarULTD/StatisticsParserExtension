@@ -26,6 +26,12 @@
         "Query names"
       ]
     },
+    "statisticsParser.suppressZeroColumns": {
+      "type": "boolean",
+      "title": "Hide All-Zero Columns",
+      "description": "Hide columns from the Parse Statistics grid when every row in the result set is zero for that column.",
+      "default": true
+    },
     "statisticsParser.convertCompletionTimeToLocalTime": {
       "type": "boolean",
       "title": "Convert Completion Time to local time",

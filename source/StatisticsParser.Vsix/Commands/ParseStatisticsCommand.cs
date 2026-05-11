@@ -6,6 +6,7 @@ using StatisticsParser.Core.Parsing;
 using StatisticsParser.Vsix.Capture;
 using StatisticsParser.Vsix.Diagnostics;
 using StatisticsParser.Vsix.InPaneTab;
+using StatisticsParser.Vsix.Options;
 using Task = System.Threading.Tasks.Task;
 
 namespace StatisticsParser.Vsix.Commands
@@ -42,7 +43,7 @@ namespace StatisticsParser.Vsix.Commands
             ParseResult parsed;
             try
             {
-                parsed = Parser.ParseData(result.Text);
+                parsed = Parser.ParseData(result.Text, ParserLanguage.English, StatisticsParserOptions.SuppressZeroColumns);
             }
             catch (Exception ex)
             {
@@ -50,7 +51,7 @@ namespace StatisticsParser.Vsix.Commands
                 return;
             }
 
-            ResultsTabInjector.TryShow(Package, parsed, pane);
+            ResultsTabInjector.TryShow(Package, result.Text, parsed, pane);
         }
     }
 }

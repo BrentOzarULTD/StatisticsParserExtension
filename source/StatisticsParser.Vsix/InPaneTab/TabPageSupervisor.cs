@@ -11,6 +11,7 @@ using StatisticsParser.Core.Parsing;
 using StatisticsParser.Vsix.Capture;
 using StatisticsParser.Vsix.Controls;
 using StatisticsParser.Vsix.Diagnostics;
+using StatisticsParser.Vsix.Options;
 
 namespace StatisticsParser.Vsix.InPaneTab
 {
@@ -60,13 +61,13 @@ namespace StatisticsParser.Vsix.InPaneTab
 
         // First-invocation render: ensures the tab exists, fills in the parsed content, selects
         // the new tab (the user just asked for it), and hooks completion events for auto-refresh.
-        public void RenderInitial(ParseResult parsed)
+        public void RenderInitial(string text, ParseResult parsed)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
             var tabControl = ResolveTabControl();
             EnsureTabExists(tabControl);
-            _wpfControl.Render(parsed);
+            _wpfControl.Render(text, parsed);
             tabControl.SelectedTab = _tabPage;
 
             if (!_eventsHooked)
@@ -288,7 +289,7 @@ namespace StatisticsParser.Vsix.InPaneTab
             }
 
             ParseResult parsed;
-            try { parsed = Parser.ParseData(capture.Text); }
+            try { parsed = Parser.ParseData(capture.Text, ParserLanguage.English, StatisticsParserOptions.SuppressZeroColumns); }
             catch (Exception ex)
             {
                 _pane?.WriteFailure("RefreshAsync.Parser", ex);
@@ -296,7 +297,7 @@ namespace StatisticsParser.Vsix.InPaneTab
             }
 
             EnsureTabExists(tabControl);
-            _wpfControl.Render(parsed);
+            _wpfControl.Render(capture.Text, parsed);
         }
 
         private static FieldInfo FindField(Type t, string name)
