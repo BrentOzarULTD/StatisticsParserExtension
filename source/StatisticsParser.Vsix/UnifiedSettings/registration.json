@@ -1,24 +1,6 @@
 {
   "$schema": "https://aka.ms/unified-settings-experience/registration/schema",
   "properties": {
-    "statisticsParser.convertCompletionTimeToLocalTime": {
-      "type": "boolean",
-      "title": "Convert Completion Time to local time",
-      "description": "Show 'Completion Time' lines from the Messages tab in the local time zone instead of the server's reported offset.",
-      "default": false
-    },
-    "statisticsParser.tempTableNamesMode": {
-      "type": "string",
-      "title": "Temp Table Names",
-      "description": "How to render temp table names in the Parse Statistics IO grid.",
-      "default": "queryName",
-      "enum": [ "doNotChange", "shorten", "queryName" ],
-      "enumItemLabels": [
-        "Do not change names",
-        "Shorten names",
-        "Query names"
-      ]
-    },
     "statisticsParser.fontSize": {
       "type": "string",
       "title": "Font Size",
@@ -31,12 +13,30 @@
         "Normal",
         "Small"
       ]
+    },
+    "statisticsParser.tempTableNamesMode": {
+      "type": "string",
+      "title": "Temp Table Names",
+      "description": "How to render temp table names in the Parse Statistics grid.",
+      "default": "queryName",
+      "enum": [ "doNotChange", "shorten", "queryName" ],
+      "enumItemLabels": [
+        "Do not change names",
+        "Shorten names",
+        "Query names"
+      ]
+    },
+    "statisticsParser.convertCompletionTimeToLocalTime": {
+      "type": "boolean",
+      "title": "Convert Completion Time to local time",
+      "description": "Show 'Completion Time' lines from the Messages tab in the local time zone instead of the server's reported offset.",
+      "default": false
     }
   },
   "categories": {
     "statisticsParser": {
       "title": "Statistics Parser",
-      "description": "Parses STATISTICS IO / STATISTICS TIME output from the Messages tab."
+      "description": "Transforms STATISTICS IO / STATISTICS TIME output from the Messages tab into a structured, readable view."
     }
   }
 }
