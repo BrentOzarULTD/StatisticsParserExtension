@@ -115,6 +115,9 @@
     <Resource Include="Images\Brent_Ozar_Unlimited_201609.png" />
   </ItemGroup>
   <ItemGroup>
+    <Resource Include="Icons\stats_parser_icon_16x16.png" />
+  </ItemGroup>
+  <ItemGroup>
     <Content Include="UnifiedSettings\registration.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <IncludeInVSIX>true</IncludeInVSIX>

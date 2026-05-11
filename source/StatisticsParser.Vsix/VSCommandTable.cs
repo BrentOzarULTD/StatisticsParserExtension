@@ -21,6 +21,9 @@ namespace StatisticsParser.Vsix
 
         public const string queryWindowContextCommandSetString = "33f13ac3-80bb-4ecb-85bc-225435603a5e";
         public static Guid queryWindowContextCommandSet = new Guid(queryWindowContextCommandSetString);
+
+        public const string guidImagesString = "9fe6c9ea-0083-4826-9cdb-85e1471bd132";
+        public static Guid guidImages = new Guid(guidImagesString);
     }
 
     /// <summary>
@@ -33,5 +36,6 @@ namespace StatisticsParser.Vsix
         public const int cmdidParseStatistics = 0x0100;
         public const int cmdidAboutStatistics = 0x0101;
         public const int queryWindowContextMenu = 0x0050;
+        public const int bmpStatisticsParser = 0x0001;
     }
 }

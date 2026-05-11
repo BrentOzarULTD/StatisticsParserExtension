@@ -23,6 +23,7 @@
     <Buttons>
       <Button guid="guidStatisticsParserCmdSet" id="cmdidParseStatistics" priority="0x0100" type="Button">
         <Parent guid="guidStatisticsParserCmdSet" id="ParseStatisticsGroup" />
+        <Icon guid="guidImages" id="bmpStatisticsParser" />
         <Strings>
           <ButtonText>Parse Statistics</ButtonText>
           <CanonicalName>Parse Statistics</CanonicalName>
@@ -31,6 +32,7 @@
       </Button>
       <Button guid="guidStatisticsParserCmdSet" id="cmdidAboutStatistics" priority="0x0100" type="Button">
         <Parent guid="guidStatisticsParserCmdSet" id="HelpAboutGroup" />
+        <Icon guid="guidImages" id="bmpStatisticsParser" />
         <Strings>
           <ButtonText>About Statistics Parser</ButtonText>
           <CanonicalName>About Statistics Parser</CanonicalName>
@@ -38,6 +40,10 @@
         </Strings>
       </Button>
     </Buttons>
+
+    <Bitmaps>
+      <Bitmap guid="guidImages" href="Icons\stats_parser_icon_16x16.png" usedList="bmpStatisticsParser" />
+    </Bitmaps>
 
   </Commands>
 
@@ -59,6 +65,10 @@
 
     <GuidSymbol name="queryWindowContextCommandSet" value="{33F13AC3-80BB-4ECB-85BC-225435603A5E}">
       <IDSymbol name="queryWindowContextMenu" value="0x0050" />
+    </GuidSymbol>
+
+    <GuidSymbol name="guidImages" value="{9FE6C9EA-0083-4826-9CDB-85E1471BD132}">
+      <IDSymbol name="bmpStatisticsParser" value="1" />
     </GuidSymbol>
   </Symbols>
 

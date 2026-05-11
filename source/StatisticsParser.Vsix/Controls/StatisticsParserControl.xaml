@@ -4,6 +4,8 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:vsui="clr-namespace:Microsoft.VisualStudio.PlatformUI;assembly=Microsoft.VisualStudio.Shell.15.0"
+             xmlns:imaging="clr-namespace:Microsoft.VisualStudio.Imaging;assembly=Microsoft.VisualStudio.Imaging"
+             xmlns:catalog="clr-namespace:Microsoft.VisualStudio.Imaging;assembly=Microsoft.VisualStudio.ImageCatalog"
              xmlns:local="clr-namespace:StatisticsParser.Vsix.Controls"
              mc:Ignorable="d"
              d:DesignHeight="200" d:DesignWidth="400"
@@ -25,11 +27,21 @@
             <MenuItem Header="Copy All"
                       InputGestureText="Ctrl+Shift+C"
                       Command="{x:Static local:StatisticsParserControl.CopyAllOutputCommand}"
-                      CommandTarget="{Binding PlacementTarget, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                      CommandTarget="{Binding PlacementTarget, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                <MenuItem.Icon>
+                    <imaging:CrispImage Width="16" Height="16"
+                                        Moniker="{x:Static catalog:KnownMonikers.Copy}" />
+                </MenuItem.Icon>
+            </MenuItem>
             <Separator />
             <MenuItem Header="About Statistics Parser..."
                       Command="{x:Static local:StatisticsParserControl.ShowAboutCommand}"
-                      CommandTarget="{Binding PlacementTarget, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                      CommandTarget="{Binding PlacementTarget, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                <MenuItem.Icon>
+                    <Image Width="16" Height="16"
+                           Source="pack://application:,,,/StatisticsParser.Vsix;component/Icons/stats_parser_icon_16x16.png" />
+                </MenuItem.Icon>
+            </MenuItem>
         </ContextMenu>
     </UserControl.ContextMenu>
     <UserControl.Resources>
