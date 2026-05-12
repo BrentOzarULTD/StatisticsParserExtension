@@ -25,10 +25,18 @@ See [docs/FUNCTIONAL.md](docs/FUNCTIONAL.md) for full input/output examples.
 
 ## Install
 
-1. Download `StatisticsParser.Vsix.vsix` from [Releases](https://github.com/BrentOzarULTD/StatisticsParserExtension/releases).
+1. Download `StatisticsParser.vsix` from [Releases](https://github.com/BrentOzarULTD/StatisticsParserExtension/releases).
 2. Close SSMS.
-3. Double-click the `.vsix` to run the VSIX installer.
+3. Run SSMS 22's bundled VSIX installer against the downloaded file:
+
+   ```powershell
+   & "C:\Program Files\Microsoft SQL Server Management Studio 22\Release\Common7\IDE\VSIXInstaller.exe" "$HOME\Downloads\StatisticsParser.vsix"
+   ```
+
+   Adjust the `.vsix` path if you saved it somewhere other than `Downloads`. Confirm the prompt in the VSIX Installer dialog.
 4. Launch SSMS.
+
+Double-clicking the `.vsix` does **not** work on most machines: Windows associates the file with Visual Studio's installer (or shows a "Select an app" picker), and neither route knows how to install into SSMS 22.
 
 ## Use
 
@@ -56,7 +64,7 @@ dotnet test source\StatisticsParser.Core.Tests
 msbuild source\StatisticsParser.Vsix /p:Configuration=Release /p:Platform=x64
 ```
 
-The VSIX output lands at `source\StatisticsParser.Vsix\bin\x64\Release\StatisticsParser.Vsix.vsix`.
+The VSIX output lands at `source\StatisticsParser.Vsix\bin\x64\Release\StatisticsParser.vsix`.
 
 ## Projects
 
