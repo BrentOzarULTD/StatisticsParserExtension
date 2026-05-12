@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CommandTable xmlns="http://schemas.microsoft.com/VisualStudio/2005-10-18/CommandTable" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+  <Extern href="stdidcmd.h" />
+  <Extern href="vsshlids.h" />
+
+  <Include href="VSGlobals.vsct" />
+
+  <Commands package="guidStatisticsParserPackage">
+
+    <Groups>
+      <Group guid="guidStatisticsParserCmdSet" id="ParseStatisticsGroup" priority="0x0600">
+        <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_CODEWIN" />
+      </Group>
+      <Group guid="guidStatisticsParserCmdSet" id="ParseStatisticsGroup" priority="0x03F0">
+        <Parent guid="queryWindowContextCommandSet" id="queryWindowContextMenu" />
+      </Group>
+      <Group guid="guidStatisticsParserCmdSet" id="HelpAboutGroup" priority="0x0700">
+        <Parent guid="guidSHLMainMenu" id="IDM_VS_MENU_HELP" />
+      </Group>
+    </Groups>
+
+    <Buttons>
+      <Button guid="guidStatisticsParserCmdSet" id="cmdidParseStatistics" priority="0x0100" type="Button">
+        <Parent guid="guidStatisticsParserCmdSet" id="ParseStatisticsGroup" />
+        <Icon guid="guidImages" id="bmpStatisticsParser" />
+        <Strings>
+          <ButtonText>Parse Statistics</ButtonText>
+          <CanonicalName>Parse Statistics</CanonicalName>
+          <LocCanonicalName>Parse Statistics</LocCanonicalName>
+        </Strings>
+      </Button>
+      <Button guid="guidStatisticsParserCmdSet" id="cmdidAboutStatistics" priority="0x0100" type="Button">
+        <Parent guid="guidStatisticsParserCmdSet" id="HelpAboutGroup" />
+        <Icon guid="guidImages" id="bmpStatisticsParser" />
+        <Strings>
+          <ButtonText>About Statistics Parser</ButtonText>
+          <CanonicalName>About Statistics Parser</CanonicalName>
+          <LocCanonicalName>About Statistics Parser</LocCanonicalName>
+        </Strings>
+      </Button>
+    </Buttons>
+
+    <Bitmaps>
+      <Bitmap guid="guidImages" href="Icons\stats_parser_icon_16x16.png" usedList="bmpStatisticsParser" />
+    </Bitmaps>
+
+  </Commands>
+
+  <CommandPlacements>
+    <CommandPlacement guid="guidStatisticsParserCmdSet" id="cmdidParseStatistics" priority="0x0100">
+      <Parent guid="guidSHLMainMenu" id="IDG_VS_TOOLS_EXT_TOOLS" />
+    </CommandPlacement>
+  </CommandPlacements>
+
+  <KeyBindings>
+    <KeyBinding guid="guidStatisticsParserCmdSet" id="cmdidParseStatistics"
+                editor="guidVSStd97"
+                key1="K" mod1="Control"
+                key2="T" mod2="Control" />
+  </KeyBindings>
+
+  <Symbols>
+    <GuidSymbol name="guidStatisticsParserPackage" value="{0F240EE5-54A7-43CB-9710-3A8E2DEA5B46}" />
+
+    <GuidSymbol name="guidStatisticsParserCmdSet" value="{5B21B934-FB0C-4BEC-A466-CDCB423B16E6}">
+      <IDSymbol name="ParseStatisticsGroup" value="0x1020" />
+      <IDSymbol name="HelpAboutGroup" value="0x1021" />
+      <IDSymbol name="cmdidParseStatistics" value="0x0100" />
+      <IDSymbol name="cmdidAboutStatistics" value="0x0101" />
+    </GuidSymbol>
+
+    <GuidSymbol name="queryWindowContextCommandSet" value="{33F13AC3-80BB-4ECB-85BC-225435603A5E}">
+      <IDSymbol name="queryWindowContextMenu" value="0x0050" />
+    </GuidSymbol>
+
+    <GuidSymbol name="guidImages" value="{9FE6C9EA-0083-4826-9CDB-85E1471BD132}">
+      <IDSymbol name="bmpStatisticsParser" value="1" />
+    </GuidSymbol>
+  </Symbols>
+
+</CommandTable>

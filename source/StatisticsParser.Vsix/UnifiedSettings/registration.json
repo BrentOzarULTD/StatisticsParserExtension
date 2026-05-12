@@ -1,0 +1,48 @@
+{
+  "$schema": "https://aka.ms/unified-settings-experience/registration/schema",
+  "properties": {
+    "statisticsParser.fontSize": {
+      "type": "string",
+      "title": "Font Size",
+      "description": "Font size for the Parse Statistics tab, relative to the Visual Studio Environment Font.",
+      "default": "normal",
+      "enum": [ "extraLarge", "large", "normal", "small" ],
+      "enumItemLabels": [
+        "Extra Large",
+        "Large",
+        "Normal",
+        "Small"
+      ]
+    },
+    "statisticsParser.tempTableNamesMode": {
+      "type": "string",
+      "title": "Temp Table Names",
+      "description": "How to render temp table names in the Parse Statistics grid.",
+      "default": "queryName",
+      "enum": [ "doNotChange", "shorten", "queryName" ],
+      "enumItemLabels": [
+        "Do not change names",
+        "Shorten names",
+        "Query names"
+      ]
+    },
+    "statisticsParser.suppressZeroColumns": {
+      "type": "boolean",
+      "title": "Hide All-Zero Columns",
+      "description": "Hide columns from the Parse Statistics grid when every row in the result set is zero for that column.",
+      "default": true
+    },
+    "statisticsParser.convertCompletionTimeToLocalTime": {
+      "type": "boolean",
+      "title": "Convert Completion Time to local time",
+      "description": "Show 'Completion Time' lines from the Messages tab in the local time zone instead of the server's reported offset.",
+      "default": false
+    }
+  },
+  "categories": {
+    "statisticsParser": {
+      "title": "Statistics Parser",
+      "description": "Transforms STATISTICS IO / STATISTICS TIME output from the Messages tab into a structured, readable view. Brought to you by the folks at Brent Ozar Unlimited."
+    }
+  }
+}

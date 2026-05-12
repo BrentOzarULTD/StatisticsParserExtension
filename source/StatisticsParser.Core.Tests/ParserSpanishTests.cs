@@ -186,8 +186,9 @@ public class ParserSpanishTests
         var expected = DateTimeOffset.Parse(
             "2025-05-27T10:32:37.8122685-04:00",
             CultureInfo.InvariantCulture,
-            DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
+            DateTimeStyles.AssumeUniversal);
         Assert.Equal(expected, completion.Timestamp);
+        Assert.Equal(TimeSpan.FromHours(-4), completion.Timestamp.Offset);
     }
 
     [Fact]

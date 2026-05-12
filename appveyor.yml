@@ -1,0 +1,18 @@
+version: 1.0.{build}
+image: Visual Studio 2022
+
+configuration: Release
+platform: x64
+
+install:
+  - nuget restore StatisticsParserExtension.sln
+
+build_script:
+  - msbuild source\StatisticsParser.Vsix\StatisticsParser.Vsix.csproj /p:Configuration=Release /p:Platform=x64 /verbosity:minimal
+
+test_script:
+  - dotnet test source\StatisticsParser.Core.Tests --configuration Release
+
+artifacts:
+  - path: source\StatisticsParser.Vsix\bin\x64\Release\StatisticsParser.Vsix.vsix
+    name: StatisticsParser.Vsix

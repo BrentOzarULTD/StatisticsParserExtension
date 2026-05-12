@@ -97,6 +97,28 @@ public class ParserTests
     }
 
     [Fact]
+    public void ParseData_SuppressZeroColumnsFalse_RetainsAllZeroLobColumns()
+    {
+        // First group's LOB columns are all zero; default behavior drops them. Opting out keeps
+        // them so users who want a stable column layout across queries can see every column.
+        var result = Parser.ParseData(MultiBatchSample, ParserLanguage.English, suppressZeroColumns: false);
+        var group = result.Data.OfType<IoGroup>().First();
+
+        Assert.Contains(IoColumn.LobLogical, group.Columns);
+        Assert.Contains(IoColumn.LobPhysical, group.Columns);
+        Assert.Contains(IoColumn.LobReadAhead, group.Columns);
+
+        // Grand total accumulates from per-group columns, so the same opt-out flows through.
+        Assert.Contains(IoColumn.LobLogical, result.Total.IoTotal.Columns);
+        Assert.Contains(IoColumn.LobPhysical, result.Total.IoTotal.Columns);
+        Assert.Contains(IoColumn.LobReadAhead, result.Total.IoTotal.Columns);
+
+        // PercentRead must still sit at the end of the column list — the WPF view appends it last.
+        Assert.Equal(IoColumn.PercentRead, group.Columns[group.Columns.Count - 1]);
+        Assert.Equal(IoColumn.PercentRead, result.Total.IoTotal.Columns[result.Total.IoTotal.Columns.Count - 1]);
+    }
+
+    [Fact]
     public void ParseData_MultiBatchSample_FirstGroupTotalsRollUp()
     {
         var result = Parser.ParseData(MultiBatchSample);
@@ -203,8 +225,10 @@ public class ParserTests
         var expected = DateTimeOffset.Parse(
             "2025-05-27T10:32:37.8122685-04:00",
             System.Globalization.CultureInfo.InvariantCulture,
-            System.Globalization.DateTimeStyles.AssumeUniversal | System.Globalization.DateTimeStyles.AdjustToUniversal);
+            System.Globalization.DateTimeStyles.AssumeUniversal);
         Assert.Equal(expected, completion.Timestamp);
+        // Lock in offset-preservation: parser must NOT normalize to UTC.
+        Assert.Equal(TimeSpan.FromHours(-4), completion.Timestamp.Offset);
     }
 
     [Fact]
@@ -449,5 +473,36 @@ public class ParserTests
         Assert.False(executions[0].Summary);
         Assert.Equal(expectedSecondIsSummary, executions[1].Summary);
         Assert.Equal(expectedExecutionTotalElapsed, result.Total.ExecutionTotal.ElapsedMs);
+    }
+
+    [Fact]
+    public void ParseData_FirstExecutionTimeCollidesWithCompileTimeTotal_RegressionFromMay2026()
+    {
+        // Verbatim shape from the Phase 9 Scenario 2 defect report (2026-05-12). The first
+        // SQL Server Execution Times block (cpu=0, elapsed=7) happens to fall within the
+        // ±5ms tolerance of the compile-time total (cpu=0, elapsed=12), so the JS-faithful
+        // DetermineSummaryRow heuristic flags it as Summary. Locking this in here so that
+        // (a) the WPF render + Copy All paths can rely on the Summary flag to drive their
+        // "Summary row detected…" notice, and (b) any future heuristic change surfaces as
+        // a test failure here rather than as a silent UX regression.
+        var input =
+            " SQL Server parse and compile time:\n" +
+            "   CPU time = 0 ms, elapsed time = 12 ms.\n" +
+            "\n" +
+            " SQL Server Execution Times:\n" +
+            "   CPU time = 0 ms,  elapsed time = 7 ms.\n" +
+            "\n" +
+            " SQL Server Execution Times:\n" +
+            "   CPU time = 15 ms,  elapsed time = 189 ms.\n";
+
+        var result = Parser.ParseData(input);
+        var execs = result.Data.OfType<TimeRow>()
+            .Where(r => r.RowType == RowType.ExecutionTime).ToList();
+
+        Assert.Equal(2, execs.Count);
+        Assert.True(execs[0].Summary);
+        Assert.False(execs[1].Summary);
+        Assert.Equal(15, result.Total.ExecutionTotal.CpuMs);
+        Assert.Equal(189, result.Total.ExecutionTotal.ElapsedMs);
     }
 }
