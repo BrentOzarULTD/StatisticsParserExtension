@@ -15,6 +15,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>StatisticsParser.Vsix</RootNamespace>
     <AssemblyName>StatisticsParser.Vsix</AssemblyName>
+    <TargetVsixContainerName>StatisticsParser.vsix</TargetVsixContainerName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <GeneratePkgDefFile>true</GeneratePkgDefFile>
     <UseCodebase>true</UseCodebase>

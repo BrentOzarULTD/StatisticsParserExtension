@@ -43,7 +43,7 @@ First public release. SSMS 22 extension that parses `STATISTICS IO` / `STATISTIC
 
 ### Install
 
-Download `StatisticsParser.Vsix.vsix` from the GitHub release, close SSMS, double-click the `.vsix`, and relaunch SSMS. See [README.md](README.md) for full install and uninstall steps.
+Download `StatisticsParser.vsix` from the GitHub release, close SSMS, double-click the `.vsix`, and relaunch SSMS. See [README.md](README.md) for full install and uninstall steps.
 
 ### Known limitations
 

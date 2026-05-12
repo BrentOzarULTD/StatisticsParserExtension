@@ -14,10 +14,10 @@ test_script:
   - dotnet test source\StatisticsParser.Core.Tests --configuration Release
 
 after_test:
-  - ps: Compress-Archive -Path source\StatisticsParser.Vsix\bin\x64\Release\StatisticsParser.Vsix.vsix, README.md -DestinationPath StatisticsParser.Vsix.zip -Force
+  - ps: Compress-Archive -Path source\StatisticsParser.Vsix\bin\x64\Release\StatisticsParser.vsix, README.md -DestinationPath StatisticsParser.Vsix.zip -Force
 
 artifacts:
-  - path: source\StatisticsParser.Vsix\bin\x64\Release\StatisticsParser.Vsix.vsix
+  - path: source\StatisticsParser.Vsix\bin\x64\Release\StatisticsParser.vsix
     name: StatisticsParser.Vsix
   - path: StatisticsParser.Vsix.zip
     name: StatisticsParser.Vsix.Bundle
