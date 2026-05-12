@@ -18,6 +18,8 @@ public static class TextReportBuilder
     private const string TotalLabel = "Total";
     private const string Tab = "\t";
 
+    public const string SummaryNoticeText = "Summary row detected. Row not added to total.";
+
     private static readonly IReadOnlyDictionary<IoColumn, string> ColumnHeader
         = new Dictionary<IoColumn, string>
         {
@@ -49,7 +51,15 @@ public static class TextReportBuilder
         {
             if (row is TimeRow t)
             {
-                if (!t.Summary) pendingTime.Add(t);
+                if (t.Summary)
+                {
+                    FlushTime(sb, pendingTime);
+                    AppendSummaryTime(sb, t);
+                }
+                else
+                {
+                    pendingTime.Add(t);
+                }
                 continue;
             }
 
@@ -78,7 +88,10 @@ public static class TextReportBuilder
         FlushTime(sb, pendingTime);
 
         sb.AppendLine("Totals:");
-        AppendIoGrandTotal(sb, parsed.Total.IoTotal);
+        if (parsed.Total.IoTotal.Data.Count > 0)
+        {
+            AppendIoGrandTotal(sb, parsed.Total.IoTotal);
+        }
         AppendGrandTime(sb, parsed.Total.CompileTotal, parsed.Total.ExecutionTotal);
 
         return sb.ToString();
@@ -97,6 +110,17 @@ public static class TextReportBuilder
         }
         sb.AppendLine();
         pending.Clear();
+    }
+
+    private static void AppendSummaryTime(StringBuilder sb, TimeRow t)
+    {
+        sb.Append(Tab).Append("CPU").Append(Tab).Append("Elapsed").AppendLine();
+        var label = t.RowType == RowType.CompileTime ? CompileLabel : ExecutionLabel;
+        sb.Append(label).Append(Tab)
+            .Append(TimeFormatter.FormatMs(t.CpuMs)).Append(Tab)
+            .Append(TimeFormatter.FormatMs(t.ElapsedMs)).AppendLine();
+        sb.AppendLine(SummaryNoticeText);
+        sb.AppendLine();
     }
 
     private static void AppendRowsAffected(StringBuilder sb, int count)

@@ -138,7 +138,16 @@ namespace StatisticsParser.Vsix.Controls
                 {
                     if (row is TimeRow t)
                     {
-                        if (!t.Summary) pendingTime.Add(t);
+                        if (t.Summary)
+                        {
+                            FlushTimeGroup(pendingTime);
+                            ContentPanel.Children.Add(StatisticsViewBuilder.BuildTimeSection(new[] { t }));
+                            ContentPanel.Children.Add(StatisticsViewBuilder.BuildSummaryNotice());
+                        }
+                        else
+                        {
+                            pendingTime.Add(t);
+                        }
                         continue;
                     }
 
@@ -167,7 +176,10 @@ namespace StatisticsParser.Vsix.Controls
                 FlushTimeGroup(pendingTime);
 
                 ContentPanel.Children.Add(StatisticsViewBuilder.BuildSectionLabel("Totals:"));
-                ContentPanel.Children.Add(StatisticsViewBuilder.BuildGrandIoSection(parsed.Total.IoTotal));
+                if (parsed.Total.IoTotal.Data.Count > 0)
+                {
+                    ContentPanel.Children.Add(StatisticsViewBuilder.BuildGrandIoSection(parsed.Total.IoTotal));
+                }
                 ContentPanel.Children.Add(StatisticsViewBuilder.BuildGrandTimeSection(
                     parsed.Total.CompileTotal, parsed.Total.ExecutionTotal));
             }

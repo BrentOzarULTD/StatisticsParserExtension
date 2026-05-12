@@ -270,11 +270,11 @@ Code shipped; each scenario must be exercised manually in SSMS 22 (experimental 
 | Scenario | Input | Expected | Status |
 |---|---|---|---|
 | Single statement | Query from [FUNCTIONAL.md §Single Statement](FUNCTIONAL.md) | One IO grid + Total + Time grid + Completion line + Totals section | ✓ verified 2026-05-06 |
-| Multi-statement | Query from [FUNCTIONAL.md §Multiple Statements](FUNCTIONAL.md) | Two IO grids with correct `% Logical Reads`, two Time grids, two Completion lines, alpha-sorted grand IO totals | pending |
-| Empty Messages | New query window, no run | "No statistics output found in Messages tab." centered | pending |
-| Error row | `RAISERROR('boom', 16, 1)` | Bold red `ErrorRow` text appears inline | pending |
-| Auto-refresh | Run query, then re-run with F5 | Tab content swaps to new parse result; SSMS focus behavior unchanged | pending |
-| Capture failure | Switch to a non-SQL editor and invoke command | Diagnostics pane logs the `NoActiveWindow` capture status; tab not modified | pending |
+| Multi-statement | Query from [FUNCTIONAL.md §Multiple Statements](FUNCTIONAL.md) | Two IO grids with correct `% Logical Reads`, two Time grids, two Completion lines, alpha-sorted grand IO totals | ✓ verified 2026-05-12 — first surfaced two defects (summary `TimeRow`s dropped by renderer; empty grand-IO table shown for no-IO queries); both fixed and re-verified. |
+| Empty Messages | New query window, no run | "No statistics output found in Messages tab." centered | ✓ verified 2026-05-12 |
+| Error row | `RAISERROR('boom', 16, 1)` | Bold red `ErrorRow` text appears inline | ✓ verified 2026-05-12 |
+| Auto-refresh | Run query, then re-run with F5 | Tab content swaps to new parse result; SSMS focus behavior unchanged | ✓ verified 2026-05-12 |
+| Capture failure | Switch to a non-SQL editor and invoke command | Diagnostics pane logs the `NoActiveWindow` capture status; tab not modified | ✓ verified 2026-05-12 |
 
 ### Documentation reconciliation
 

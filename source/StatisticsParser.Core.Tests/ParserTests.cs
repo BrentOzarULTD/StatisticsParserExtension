@@ -474,4 +474,35 @@ public class ParserTests
         Assert.Equal(expectedSecondIsSummary, executions[1].Summary);
         Assert.Equal(expectedExecutionTotalElapsed, result.Total.ExecutionTotal.ElapsedMs);
     }
+
+    [Fact]
+    public void ParseData_FirstExecutionTimeCollidesWithCompileTimeTotal_RegressionFromMay2026()
+    {
+        // Verbatim shape from the Phase 9 Scenario 2 defect report (2026-05-12). The first
+        // SQL Server Execution Times block (cpu=0, elapsed=7) happens to fall within the
+        // ±5ms tolerance of the compile-time total (cpu=0, elapsed=12), so the JS-faithful
+        // DetermineSummaryRow heuristic flags it as Summary. Locking this in here so that
+        // (a) the WPF render + Copy All paths can rely on the Summary flag to drive their
+        // "Summary row detected…" notice, and (b) any future heuristic change surfaces as
+        // a test failure here rather than as a silent UX regression.
+        var input =
+            " SQL Server parse and compile time:\n" +
+            "   CPU time = 0 ms, elapsed time = 12 ms.\n" +
+            "\n" +
+            " SQL Server Execution Times:\n" +
+            "   CPU time = 0 ms,  elapsed time = 7 ms.\n" +
+            "\n" +
+            " SQL Server Execution Times:\n" +
+            "   CPU time = 15 ms,  elapsed time = 189 ms.\n";
+
+        var result = Parser.ParseData(input);
+        var execs = result.Data.OfType<TimeRow>()
+            .Where(r => r.RowType == RowType.ExecutionTime).ToList();
+
+        Assert.Equal(2, execs.Count);
+        Assert.True(execs[0].Summary);
+        Assert.False(execs[1].Summary);
+        Assert.Equal(15, result.Total.ExecutionTotal.CpuMs);
+        Assert.Equal(189, result.Total.ExecutionTotal.ElapsedMs);
+    }
 }

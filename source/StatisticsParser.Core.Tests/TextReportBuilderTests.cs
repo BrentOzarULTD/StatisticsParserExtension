@@ -100,6 +100,28 @@ public class TextReportBuilderTests
     }
 
     [Fact]
+    public void Build_NoIoData_SuppressesGrandIoTableButKeepsTotalsLabelAndGrandTime()
+    {
+        var parsed = new ParseResult
+        {
+            Data = new List<IResultRow> { new InfoRow { Text = "Commands completed successfully." } },
+            Total = new ParseResultTotal
+            {
+                CompileTotal = new TimeTotal { CpuMs = 0, ElapsedMs = 12 },
+                ExecutionTotal = new TimeTotal { CpuMs = 0, ElapsedMs = 7 },
+            },
+        };
+
+        var text = TextReportBuilder.Build(parsed);
+
+        // The "Totals:" label is followed immediately by the grand-time header — no empty
+        // grand-IO table emitted in between.
+        Assert.Contains("Totals:" + Nl + Tab + "CPU" + Tab + "Elapsed" + Nl, text);
+        Assert.Contains("SQL Server parse and compile time" + Tab + "00:00:00.000" + Tab + "00:00:00.012" + Nl, text);
+        Assert.Contains("SQL Server Execution Times" + Tab + "00:00:00.000" + Tab + "00:00:00.007" + Nl, text);
+    }
+
+    [Fact]
     public void Build_TimeRows_EmitInlineCpuElapsedTable()
     {
         var parsed = new ParseResult
@@ -117,11 +139,8 @@ public class TextReportBuilderTests
     }
 
     [Fact]
-    public void Build_TimeSummaryRows_AreSkippedFromPerStatementTable()
+    public void Build_TimeSummaryRows_AreEmittedWithUpstreamNotice()
     {
-        // Summary=true rows are skipped from the per-statement Time table. Grand totals
-        // still emit (CPU/Elapsed header for the Totals: section), so check that the
-        // summary row's value (00:00:00.005) doesn't appear anywhere in the output.
         var parsed = new ParseResult
         {
             Data = new List<IResultRow>
@@ -130,7 +149,8 @@ public class TextReportBuilderTests
             },
         };
         var text = TextReportBuilder.Build(parsed);
-        Assert.DoesNotContain("00:00:00.005", text);
+        Assert.Contains("SQL Server Execution Times" + Tab + "00:00:00.005" + Tab + "00:00:00.005" + Nl, text);
+        Assert.Contains(TextReportBuilder.SummaryNoticeText + Nl, text);
     }
 
     [Fact]

@@ -106,6 +106,16 @@ namespace StatisticsParser.Vsix.Controls
             };
         }
 
+        public static FrameworkElement BuildSummaryNotice()
+        {
+            return new TextBox
+            {
+                Text = TextReportBuilder.SummaryNoticeText,
+                FontWeight = FontWeights.Bold,
+                Margin = new Thickness(0, 0, 0, 8),
+            };
+        }
+
         public static FrameworkElement BuildError(string text)
         {
             var tb = new TextBox
