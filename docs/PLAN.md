@@ -276,10 +276,6 @@ Code shipped; each scenario must be exercised manually in SSMS 22 (experimental 
 | Auto-refresh | Run query, then re-run with F5 | Tab content swaps to new parse result; SSMS focus behavior unchanged | ✓ verified 2026-05-12 |
 | Capture failure | Switch to a non-SQL editor and invoke command | Diagnostics pane logs the `NoActiveWindow` capture status; tab not modified | ✓ verified 2026-05-12 |
 
-### Documentation reconciliation
-
-- [docs/FUNCTIONAL.md](FUNCTIONAL.md) still describes the dockable tool window in places — update prose to match the in-pane "Parse Statistics" tab shipped via Phase 12.
-
 ---
 
 ## Phase 10 — Theme Support — COMPLETED
@@ -294,7 +290,7 @@ Theme keys were pre-wired during Phase 9 (per user decision). Implementation:
 
 ---
 
-## Phase 10.5 — Options Page (Unified Settings) — PENDING
+## Phase 10.5 — Options Page (Unified Settings) — COMPLETED
 
 Replaces the interim `[ProvideOptionPage]` / `UIElementDialogPage` work shipped during the Phase 10 timeframe with the SSMS 22 / VS 2022 **Unified Settings** registration: a top-level **"Statistics Parser"** node in Tools > Options' "All Settings" search UI. No legacy dialog, no click-through to one.
 
@@ -314,22 +310,22 @@ Adds a third Unified Settings entry, `statisticsParser.fontSize` (enum `small` /
 
 ## Phase 11 — Build & CI
 
-`.github/workflows/build.yml` on `windows-latest`:
+`appveyor.yml` at the repo root, using a Visual Studio 2022+ image (e.g. `image: Visual Studio 2022`) with the VS 2026 build tools available:
 
-1. Checkout
-2. Setup MSBuild (VS 2026)
-3. `nuget restore`
-4. `dotnet test source/StatisticsParser.Core.Tests` — Core tests run without SSMS
-5. `msbuild source/StatisticsParser.Vsix /p:Configuration=Release /p:Platform=x64`
-6. Upload `StatisticsParser.vsix` as build artifact
+1. `nuget restore StatisticsParserExtension.sln`
+2. `dotnet test source/StatisticsParser.Core.Tests` — Core tests run without SSMS
+3. `msbuild source/StatisticsParser.Vsix /p:Configuration=Release /p:Platform=x64`
+4. Publish `source/StatisticsParser.Vsix/bin/x64/Release/StatisticsParser.vsix` as a build artifact (`artifacts:` block)
 
-**Verification**: GitHub Actions run produces green build and downloadable VSIX artifact.
+Wire AppVeyor to the GitHub repo (project linked at https://ci.appveyor.com), enable build status badges in the README, and confirm webhook fires on push to `dev` and `main`.
+
+**Verification**: AppVeyor run on a push to `dev` produces a green build with a downloadable `.vsix` artifact.
 
 ---
 
-## Phase 12 — In-Pane Tab Architecture - SPIKE COMPLETED (branch `spike/in-pane-tab`)
+## Phase 12 — In-Pane Tab Architecture — COMPLETED
 
-Replaces the Phase 9 dockable tool-window with a third tab — labeled **"Parse Statistics"** — sitting inside the SSMS query window's Results/Messages tab strip. The change was scoped as a throwaway spike on a branch; behavior validated, branch held back from merge pending real-use bake-in.
+Replaces the Phase 9 dockable tool-window with a third tab — labeled **"Parse Statistics"** — sitting inside the SSMS query window's Results/Messages tab strip. Originally scoped as a throwaway spike (branch `spike/in-pane-tab`); landed on `dev` (commits `dc7198b`, `dfe6309`, `f67b69b`) and has since carried Phase 9 rendering, Phase 10 theming, Phase 10.6 font sizing, and the all-zero-column suppression option.
 
 ### Discovery path
 
@@ -360,13 +356,6 @@ Stored in a `ConditionalWeakTable<object, TabPageSupervisor>` keyed on docView s
 | Re-run query (F5) | Tab persists / is re-added; content auto-refreshes | ✓ |
 | F5 while on Messages | Tab content updates silently; user stays on Messages | ✓ |
 | F5 while on Parse Statistics | SSMS focuses Results (default behavior); Parse Statistics content still updates | ✓ |
-
-### Open work before merging spike branch to `dev`
-
-- Real-use bake-in across multiple query windows / re-execution / window close-and-reopen
-- Phase 9 structured-DataGrid rendering (`StatisticsParserControl.Render(ParseResult)`) still pending — currently the in-pane tab shows the minimum-viable text dump from the Phase 8b ship
-- Phase 10 theme support — verify VS resource keys flow across the `ElementHost` boundary
-- Update `docs/FUNCTIONAL.md` if the user-visible UX description still mentions a dockable tool window
 
 ---
 
