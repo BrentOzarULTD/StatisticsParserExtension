@@ -53,6 +53,13 @@
     </CommandPlacement>
   </CommandPlacements>
 
+  <KeyBindings>
+    <KeyBinding guid="guidStatisticsParserCmdSet" id="cmdidParseStatistics"
+                editor="guidVSStd97"
+                key1="K" mod1="Control"
+                key2="T" mod2="Control" />
+  </KeyBindings>
+
   <Symbols>
     <GuidSymbol name="guidStatisticsParserPackage" value="{0F240EE5-54A7-43CB-9710-3A8E2DEA5B46}" />
 
