@@ -12,7 +12,7 @@
       <Group guid="guidStatisticsParserCmdSet" id="ParseStatisticsGroup" priority="0x0600">
         <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_CODEWIN" />
       </Group>
-      <Group guid="guidStatisticsParserCmdSet" id="ParseStatisticsGroup" priority="0x0100">
+      <Group guid="guidStatisticsParserCmdSet" id="ParseStatisticsGroup" priority="0x03F0">
         <Parent guid="queryWindowContextCommandSet" id="queryWindowContextMenu" />
       </Group>
       <Group guid="guidStatisticsParserCmdSet" id="HelpAboutGroup" priority="0x0700">
