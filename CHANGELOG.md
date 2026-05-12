@@ -14,7 +14,7 @@ First public release. SSMS 22 extension that parses `STATISTICS IO` / `STATISTIC
 
 ### Surface in SSMS
 
-- Right-click **Parse Statistics** on the query body, or press `Ctrl+K, Ctrl+T`.
+- Right-click **Parse Statistics** on the query body, or press `Ctrl+K, Ctrl+G`.
 - Output lands in a **Parse Statistics** tab next to the native Results and Messages tabs in the same query window.
 - Subsequent executions in the same window auto-refresh the tab — no extra click needed.
 

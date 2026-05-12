@@ -6,7 +6,7 @@ C# port of [Jorriss/StatisticsParser](https://github.com/Jorriss/StatisticsParse
 
 ## Features
 
-- One-click parsing via right-click in the query window or `Ctrl+K, Ctrl+T`
+- One-click parsing via right-click in the query window or `Ctrl+K, Ctrl+G`
 - Per-statement IO tables with table totals and `% Logical Reads` share
 - CPU / Elapsed time tables formatted as `hh:mm:ss.ms`
 - Cross-statement **Totals** section: grand IO total per table + grand time total
@@ -27,10 +27,10 @@ See [docs/FUNCTIONAL.md](docs/FUNCTIONAL.md) for full input/output examples.
 
 1. Download `StatisticsParser.vsix` from [Releases](https://github.com/BrentOzarULTD/StatisticsParserExtension/releases).
 2. Close SSMS.
-3. Run SSMS 22's bundled VSIX installer against the downloaded file:
+3. Run SSMS 22's bundled VSIX installer against the downloaded file. Change the directory to the path where you downloaded StatisticsParser.vsix:
 
    ```powershell
-   & "C:\Program Files\Microsoft SQL Server Management Studio 22\Release\Common7\IDE\VSIXInstaller.exe" "$HOME\Downloads\StatisticsParser.vsix"
+   & "C:\Program Files\Microsoft SQL Server Management Studio 22\Release\Common7\IDE\VSIXInstaller.exe" StatisticsParser.vsix
    ```
 
    Adjust the `.vsix` path if you saved it somewhere other than `Downloads`. Confirm the prompt in the VSIX Installer dialog.
@@ -41,7 +41,7 @@ Double-clicking the `.vsix` does **not** work on most machines: Windows associat
 ## Use
 
 1. Run a query with `SET STATISTICS IO, TIME ON;`.
-2. Right-click anywhere in the query body and choose **Parse Statistics** (or press `Ctrl+K, Ctrl+T`).
+2. Right-click anywhere in the query body and choose **Parse Statistics** (or press `Ctrl+K, Ctrl+G`).
 3. The **Parse Statistics** tab appears next to the Messages tab.
 
 Subsequent executions in the same query window auto-refresh the tab.
