@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.0 — 2026-05-13
+
+- Compatibility: SSMS 22.6 (VS shell 18.6.0). Microsoft rebuilt `BrokeredContracts.dll` and changed the signature of `IQueryEditorTabDataServiceBrokered.GetMessagesTabSegmentAsync`, which caused Parse Statistics to silently fail with a `ProxyUnavailable` diagnostic on 22.6. Brokered-method reflection is now adaptive — it locates the right overload by required parameter prefix + `CancellationToken` and fills any trailing optional parameters with their defaults, so the extension keeps working on 22.0–22.5 and 22.6+.
+
 ## 1.0 — 2026-05-12
 
 First public release. SSMS 22 extension that parses `STATISTICS IO` / `STATISTICS TIME` output from the Messages tab and renders it as a third tab — **Parse Statistics** — inside the query window.

@@ -15,25 +15,45 @@ Adjust the VS edition path below (`Professional` / `Enterprise` / `Community`) t
 Run the steps below in PowerShell. Set `$repo` once at the top so the rest works regardless of your current directory. Each step is required — skipping step 3 in particular will leave SSMS launching against a stale catalog and your changes will not appear.
 
 ```powershell
-# 0. Point at your local clone. Adjust to wherever you cloned the repo.
-$repo = "Z:\Brent Ozar Unlimited\Code\StatisticsParserExtension"
+# 0. Kill SSMS processes
+Get-Process SSMS -ErrorAction SilentlyContinue | Stop-Process -Force
+Start-Sleep -Seconds 2
 
-# 1. Build the VSIX. msbuild only — `dotnet build` produces the assembly but skips VSIX packaging.
+# 1. Rebuild Release VSIX (already built above, but rerun if you've made changes since).
+$repo = "Z:\Brent Ozar Unlimited\Code\StatisticsParserExtension"
 & "C:\Program Files\Microsoft Visual Studio\18\Professional\MSBuild\Current\Bin\MSBuild.exe" `
   "$repo\source\StatisticsParser.Vsix\StatisticsParser.Vsix.csproj" `
   /p:Configuration=Debug /p:Platform=x64 /t:Rebuild /v:minimal /nologo
 
-# 2. Uninstall any previous build, then install the fresh one into the Exp hive.
+# 2. Uninstall previous version
 $installer = "C:\Program Files\Microsoft SQL Server Management Studio 22\Release\Common7\IDE\VSIXInstaller.exe"
-$vsix = "$repo\source\StatisticsParser.Vsix\bin\x64\Debug\StatisticsParser.vsix"
 & $installer /quiet /rootSuffix:Exp /uninstall:StatisticsParser.4A9EFF2E-819B-453D-BE4C-5DF7B343C0E7
+
+# 3. Install fresh into Exp hive
+$vsix = "$repo\source\StatisticsParser.Vsix\bin\x64\Debug\StatisticsParser.vsix"
 & $installer /quiet /rootSuffix:Exp /logFile:"$env:TEMP\statsparser-install.log" $vsix
 
-# 3. Force SSMS to rebuild its extension catalog. MANDATORY after every reinstall.
-& "C:\Program Files\Microsoft SQL Server Management Studio 22\Release\Common7\IDE\SSMS.exe" /UpdateConfiguration /RootSuffix Exp
+# 4. MANDATORY: rebuild SSMS extension catalog. Skipping this is why the menu doesn't show.
+$ssms = "C:\Program Files\Microsoft SQL Server Management Studio 22\Release\Common7\IDE\Ssms.exe"
+& $ssms /UpdateConfiguration /RootSuffix Exp
 
-# 4. Launch the experimental SSMS instance.
-& "C:\Program Files\Microsoft SQL Server Management Studio 22\Release\Common7\IDE\SSMS.exe" /RootSuffix Exp /log
+# 5. Refresh cache, run elevated PowerShell:
+$prof = Get-ChildItem "$env:LOCALAPPDATA\Microsoft\SSMS" -Directory |
+    Where-Object Name -match '^22\.0_[0-9a-f]+(Exp)?$' |
+    Sort-Object LastWriteTime -Descending |
+    Select-Object -First 1 -ExpandProperty FullName
+Write-Host "Clearing caches in $prof"
+foreach ($d in 'ComponentModelCache','ImageLibrary','MEFCacheBackup') {
+    $p = Join-Path $prof $d
+    if (Test-Path $p) { Remove-Item $p -Recurse -Force }
+}
+
+$ssms = "C:\Program Files\Microsoft SQL Server Management Studio 22\Release\Common7\IDE\Ssms.exe"
+& $ssms /Setup
+& $ssms /Setup /RootSuffix Exp
+
+# 6. Launch the experimental SSMS instance.
+& $ssms /RootSuffix Exp /log
 ```
 
 For a Release build, swap `Configuration=Debug` for `Configuration=Release` in step 1 and adjust the `$vsix` path (`bin\x64\Release\...`).

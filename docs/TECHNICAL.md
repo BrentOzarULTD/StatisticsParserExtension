@@ -87,9 +87,10 @@ The Messages tab in SSMS 22 is **not** an `IVsOutputWindow` pane. It lives insid
 **Path** ([Capture/](../source/StatisticsParser.Vsix/Capture/)):
 
 1. `Microsoft.SqlServer.Management.UI.VSIntegration.SqlEditor.BrokeredContracts.dll` is loaded by reflection from the SSMS install directory ([ContractTypes.cs](../source/StatisticsParser.Vsix/Capture/ContractTypes.cs)).
-2. `SVsBrokeredServiceContainer` provides a full-access `IServiceBroker`; we call `GetProxyAsync<IQueryEditorTabDataServiceBrokered>(QueryEditorTabDataService)` to obtain a brokered proxy ([MessagesBrokeredClient.cs](../source/StatisticsParser.Vsix/Capture/MessagesBrokeredClient.cs)).
-3. The proxy exposes `GetMessagesTabSegmentAsync(int start, int max, CancellationToken)` returning `TextContentSegment { Content, StartPosition, TotalLength }`. We page through 64 KB segments until `TotalLength` characters have been read ([MessagesTabReader.cs](../source/StatisticsParser.Vsix/Capture/MessagesTabReader.cs)).
-4. The captured text is a snapshot at command-fire time. If a query is still running and the tab continues to grow, only the prefix that existed when the first segment returned is captured.
+2. `SVsBrokeredServiceContainer` provides a full-access `IServiceBroker`. We acquire a proxy for `ISqlEditorServiceBrokered` (via `SqlEditorBrokeredServiceDescriptors.SqlEditorService`) and call `GetCurrentConnectionAsync` to obtain a `SqlEditorConnectionDetails` whose `EditorMoniker` identifies the active SQL editor. Empty/null moniker → `MessagesCaptureStatus.NoActiveWindow` ([MessagesBrokeredClient.cs](../source/StatisticsParser.Vsix/Capture/MessagesBrokeredClient.cs)).
+3. With that moniker in hand, we acquire a second proxy for `IQueryEditorTabDataServiceBrokered` (via `QueryEditorTabDataServiceDescriptors.QueryEditorTabDataService`).
+4. The proxy exposes `GetMessagesTabSegmentAsync(string editorMoniker, int start, int max, CancellationToken)` returning `TextContentSegment { Content, StartPosition, TotalLength }`. We page through 64 KB segments until `TotalLength` characters have been read ([MessagesTabReader.cs](../source/StatisticsParser.Vsix/Capture/MessagesTabReader.cs)).
+5. The captured text is a snapshot at command-fire time. If a query is still running and the tab continues to grow, only the prefix that existed when the first segment returned is captured.
 
 The proxy returns `null` when no SQL query window is the active document; the reader surfaces this as `MessagesCaptureStatus.NoActiveWindow`. Per-status messaging is rendered into the WPF control via `StatisticsParserControl.ShowCaptureError(...)`.
 

@@ -11,7 +11,7 @@ namespace StatisticsParser.Vsix.Capture
     // GetMessagesTabSegmentAsync until TotalLength chars have been collected. The captured text is
     // a snapshot at command-fire time; if a query is still running and the Messages tab continues
     // to grow, only the prefix that existed when the first segment returned is captured.
-    public static class MessagesTabReader
+    internal static class MessagesTabReader
     {
         private const int PageSize = 65536;
 
@@ -28,6 +28,10 @@ namespace StatisticsParser.Vsix.Capture
             catch (FileNotFoundException ex)
             {
                 return MessagesCaptureResult.ContractsAssemblyMissing(ex);
+            }
+            catch (NoActiveEditorException)
+            {
+                return MessagesCaptureResult.NoActiveWindow();
             }
             catch (InvalidOperationException ex)
             {
