@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
     <Metadata>
-        <Identity Id="StatisticsParser.4A9EFF2E-819B-453D-BE4C-5DF7B343C0E7" Version="1.0.4" Language="en-US" Publisher="Brent Ozar Unlimited" />
+        <Identity Id="StatisticsParser.4A9EFF2E-819B-453D-BE4C-5DF7B343C0E7" Version="1.0.0" Language="en-US" Publisher="Brent Ozar Unlimited" />
         <DisplayName>Statistics Parser</DisplayName>
         <Description xml:space="preserve">Parses STATISTICS IO / STATISTICS TIME output from the SSMS Messages tab and renders it in a dockable tool window. </Description>
         <Tags>SSMS;SQL Server;Statistics IO;Statistics Time;Performance</Tags>

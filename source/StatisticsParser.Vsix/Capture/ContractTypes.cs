@@ -26,18 +26,24 @@ namespace StatisticsParser.Vsix.Capture
 
         public Assembly ContractsAssembly { get; private set; }
         public Type IQueryEditorTabDataServiceBrokered { get; private set; }
+        public Type ISqlEditorServiceBrokered { get; private set; }
         public Type TextContentSegmentType { get; private set; }
         public Type QueryResultsPaneType { get; private set; }
         public Type QueryResultsPaneInfoType { get; private set; }
+        public Type SqlEditorConnectionDetailsType { get; private set; }
         public object QueryEditorTabDataServiceMoniker { get; private set; }
+        public object SqlEditorServiceMoniker { get; private set; }
 
         public MethodInfo GetMessagesTabSegmentAsyncMethod { get; private set; }
         public MethodInfo GetAvailablePanesAsyncMethod { get; private set; }
+        public MethodInfo GetCurrentConnectionAsyncMethod { get; private set; }
 
         public PropertyInfo TextContentSegment_Content { get; private set; }
         public PropertyInfo TextContentSegment_StartPosition { get; private set; }
         public PropertyInfo TextContentSegment_TotalLength { get; private set; }
         public PropertyInfo QueryResultsPaneInfo_PaneType { get; private set; }
+        public PropertyInfo SqlEditorConnectionDetails_EditorMoniker { get; private set; }
+        public PropertyInfo SqlEditorConnectionDetails_IsActive { get; private set; }
         public object QueryResultsPane_Messages { get; private set; }
 
         private static Task<ContractTypes> LoadAsync()
@@ -60,23 +66,43 @@ namespace StatisticsParser.Vsix.Capture
             ContractsAssembly = Assembly.LoadFrom(dllPath);
 
             IQueryEditorTabDataServiceBrokered = RequireType("IQueryEditorTabDataServiceBrokered");
+            ISqlEditorServiceBrokered = RequireType("ISqlEditorServiceBrokered");
             TextContentSegmentType = RequireType("TextContentSegment");
             QueryResultsPaneType = RequireType("QueryResultsPane");
             QueryResultsPaneInfoType = RequireType("QueryResultsPaneInfo");
-            var descriptorsType = RequireType("QueryEditorTabDataServiceDescriptors");
+            SqlEditorConnectionDetailsType = RequireType("SqlEditorConnectionDetails");
+            var tabDataDescriptorsType = RequireType("QueryEditorTabDataServiceDescriptors");
+            var editorServiceDescriptorsType = RequireType("SqlEditorBrokeredServiceDescriptors");
 
-            GetMessagesTabSegmentAsyncMethod = RequireMethod(
-                IQueryEditorTabDataServiceBrokered, "GetMessagesTabSegmentAsync", paramCount: 3);
-            GetAvailablePanesAsyncMethod = RequireMethod(
-                IQueryEditorTabDataServiceBrokered, "GetAvailablePanesAsync", paramCount: 1);
+            // SSMS 22.6+ added a leading `string editorMoniker` parameter to every
+            // IQueryEditorTabDataServiceBrokered method; the moniker is fetched from the new sibling
+            // ISqlEditorServiceBrokered.GetCurrentConnectionAsync.
+            GetMessagesTabSegmentAsyncMethod = ResolveMethod(
+                IQueryEditorTabDataServiceBrokered,
+                name: "GetMessagesTabSegmentAsync",
+                requiredPositionalTypes: new[] { typeof(string), typeof(int), typeof(int) },
+                requiresCancellationToken: true);
+            GetAvailablePanesAsyncMethod = ResolveMethod(
+                IQueryEditorTabDataServiceBrokered,
+                name: "GetAvailablePanesAsync",
+                requiredPositionalTypes: new[] { typeof(string) },
+                requiresCancellationToken: true);
+            GetCurrentConnectionAsyncMethod = ResolveMethod(
+                ISqlEditorServiceBrokered,
+                name: "GetCurrentConnectionAsync",
+                requiredPositionalTypes: Type.EmptyTypes,
+                requiresCancellationToken: true);
 
             TextContentSegment_Content = RequireProperty(TextContentSegmentType, "Content");
             TextContentSegment_StartPosition = RequireProperty(TextContentSegmentType, "StartPosition");
             TextContentSegment_TotalLength = RequireProperty(TextContentSegmentType, "TotalLength");
             QueryResultsPaneInfo_PaneType = RequireProperty(QueryResultsPaneInfoType, "PaneType");
+            SqlEditorConnectionDetails_EditorMoniker = RequireProperty(SqlEditorConnectionDetailsType, "EditorMoniker");
+            SqlEditorConnectionDetails_IsActive = RequireProperty(SqlEditorConnectionDetailsType, "IsActive");
 
             QueryResultsPane_Messages = Enum.Parse(QueryResultsPaneType, "Messages");
-            QueryEditorTabDataServiceMoniker = ResolveMonikerFrom(descriptorsType);
+            QueryEditorTabDataServiceMoniker = ResolveMonikerFrom(tabDataDescriptorsType, "QueryEditorTabDataService");
+            SqlEditorServiceMoniker = ResolveMonikerFrom(editorServiceDescriptorsType, "SqlEditorService");
         }
 
         private Type RequireType(string simpleName)
@@ -90,14 +116,52 @@ namespace StatisticsParser.Vsix.Capture
             return t;
         }
 
-        private static MethodInfo RequireMethod(Type type, string name, int paramCount)
+        // Among all overloads with the given name, pick the one whose parameter list begins with
+        // the required positional types (in order), optionally contains a CancellationToken, and
+        // whose extra parameters are all defaultable. This survives SSMS minor versions adding
+        // new optional parameters to the brokered method without breaking older versions.
+        private static MethodInfo ResolveMethod(
+            Type type, string name, Type[] requiredPositionalTypes, bool requiresCancellationToken)
         {
-            var m = type.GetMethods().FirstOrDefault(x => x.Name == name && x.GetParameters().Length == paramCount);
-            if (m == null)
+            var candidates = type.GetMethods().Where(m => m.Name == name).ToList();
+            if (candidates.Count == 0)
+                throw new InvalidOperationException(
+                    "BrokeredContracts method not found: " + type.FullName + "." + name);
+
+            MethodInfo best = null;
+            int bestExtras = int.MaxValue;
+            foreach (var m in candidates)
+            {
+                var ps = m.GetParameters();
+                if (ps.Length < requiredPositionalTypes.Length) continue;
+
+                bool prefixOk = true;
+                for (int i = 0; i < requiredPositionalTypes.Length; i++)
+                    if (ps[i].ParameterType != requiredPositionalTypes[i]) { prefixOk = false; break; }
+                if (!prefixOk) continue;
+
+                if (requiresCancellationToken &&
+                    !ps.Skip(requiredPositionalTypes.Length).Any(p => p.ParameterType == typeof(CancellationToken)))
+                    continue;
+
+                bool extrasOk = true;
+                foreach (var p in ps.Skip(requiredPositionalTypes.Length))
+                {
+                    if (p.ParameterType == typeof(CancellationToken)) continue;
+                    if (!p.HasDefaultValue && !p.ParameterType.IsValueType) { extrasOk = false; break; }
+                }
+                if (!extrasOk) continue;
+
+                int extras = ps.Length - requiredPositionalTypes.Length - (requiresCancellationToken ? 1 : 0);
+                if (extras < bestExtras) { best = m; bestExtras = extras; }
+            }
+
+            if (best == null)
                 throw new InvalidOperationException(
                     "BrokeredContracts method not found: " + type.FullName + "." + name +
-                    " with " + paramCount + " parameters");
-            return m;
+                    " with required prefix [" + string.Join(", ", requiredPositionalTypes.Select(t => t.Name)) + "]" +
+                    (requiresCancellationToken ? " + CancellationToken" : ""));
+            return best;
         }
 
         private static PropertyInfo RequireProperty(Type type, string name)
@@ -109,19 +173,19 @@ namespace StatisticsParser.Vsix.Capture
             return p;
         }
 
-        private static object ResolveMonikerFrom(Type descriptorsType)
+        private static object ResolveMonikerFrom(Type descriptorsType, string memberName)
         {
             const BindingFlags bf =
                 BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance;
 
             // Try the known member name first.
-            var prop = descriptorsType.GetProperty("QueryEditorTabDataService", bf);
+            var prop = descriptorsType.GetProperty(memberName, bf);
             if (prop != null && prop.GetGetMethod(true)?.IsStatic == true)
             {
                 var v = prop.GetValue(null);
                 if (v != null) return v;
             }
-            var field = descriptorsType.GetField("QueryEditorTabDataService", bf);
+            var field = descriptorsType.GetField(memberName, bf);
             if (field != null && field.IsStatic)
             {
                 var v = field.GetValue(null);
@@ -145,7 +209,7 @@ namespace StatisticsParser.Vsix.Capture
             }
 
             throw new InvalidOperationException(
-                "Could not locate QueryEditorTabDataServiceDescriptors.QueryEditorTabDataService moniker");
+                "Could not locate " + descriptorsType.Name + "." + memberName + " moniker");
         }
 
         private static bool IsMonikerShape(Type t) =>
