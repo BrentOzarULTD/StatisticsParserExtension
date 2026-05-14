@@ -49,3 +49,11 @@ publish/
 Thumbs.db
 ehthumbs.db
 Desktop.ini
+
+# Signing material and secrets
+*.pfx
+*.snk
+*.key
+secrets.json
+.env
+.env.*
