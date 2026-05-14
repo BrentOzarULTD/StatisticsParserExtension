@@ -57,3 +57,6 @@ Desktop.ini
 secrets.json
 .env
 .env.*
+
+# Docs
+docs/SECURITY.md
