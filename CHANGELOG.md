@@ -1,20 +1,16 @@
 # Changelog
 
-## 1.0.0 — 2026-05-13
-
-- Compatibility: SSMS 22.6 (VS shell 18.6.0). Microsoft rebuilt `BrokeredContracts.dll` and changed the signature of `IQueryEditorTabDataServiceBrokered.GetMessagesTabSegmentAsync`, which caused Parse Statistics to silently fail with a `ProxyUnavailable` diagnostic on 22.6. Brokered-method reflection is now adaptive — it locates the right overload by required parameter prefix + `CancellationToken` and fills any trailing optional parameters with their defaults, so the extension keeps working on 22.0–22.5 and 22.6+.
-
-## 1.0 — 2026-05-12
+## 1.0.0 — 2026-05-14
 
 First public release. SSMS 22 extension that parses `STATISTICS IO` / `STATISTICS TIME` output from the Messages tab and renders it as a third tab — **Parse Statistics** — inside the query window.
 
 ### Parsing
 
-- C# port of [Jorriss/StatisticsParser](https://github.com/Jorriss/StatisticsParser), with `parser.js` as the authoritative reference.
+- C# port of [Jorriss/StatisticsParser](https://github.com/Jorriss/StatisticsParser).
 - Per-statement `STATISTICS IO` tables: Scan count, Logical Reads, Physical Reads, Read-ahead Reads, LOB Logical/Physical/Read-ahead Reads, plus a `% Logical Reads` share column.
 - Per-statement `STATISTICS TIME` rows formatted as `hh:mm:ss.ms` for both CPU time and elapsed time.
 - Cross-statement **Totals** section: grand IO total per table across the batch and grand CPU/elapsed totals.
-- Rows-affected lines, error messages, and statement completion timestamps surfaced inline.
+- Rows-affected lines, error messages (in red), and statement completion timestamps surfaced inline.
 
 ### Surface in SSMS
 
@@ -26,19 +22,24 @@ First public release. SSMS 22 extension that parses `STATISTICS IO` / `STATISTIC
 
 - Structured WPF tables with sortable columns, right-aligned numeric headers, bold totals, and selectable text.
 - Long temp-table names truncate with a tooltip showing the full name.
-- **Copy all output** command for pasting the parsed view elsewhere.
-- Respects SSMS light, dark, and blue themes.
+- **Copy all** command for pasting the parsed view elsewhere.
+- Respects all SSMS 22 themes (light, dark, blue, and the new SSMS 22 themes such as Bubblegum).
 
 ### Tools > Options (Statistics Parser)
 
 - Font size for the Parse Statistics tab.
 - Hide all-zero columns to reduce clutter.
-- Query-name temp-table mode strips the per-session suffix so `#temp_______…` collapses to `#temp` across executions.
+- Temp-table name handling: **Query names** (default, strips the per-session suffix so `#temp_______…` collapses to `#temp`), **Shorten names** (collapses long underscore runs to `…`), or **Do not change names**.
+- Convert Completion Time to local time, so `Completion Time` lines from the Messages tab show in the local time zone instead of the server's reported offset.
 
 ### Other
 
 - About dialog with version, credit to Jorriss's original project, and Brent Ozar Unlimited branding.
 - Icons for the menu command and context menu entry.
+
+### Compatibility
+
+- Supports SSMS 22.0 through 22.6+. SSMS 22.6 rebuilt `BrokeredContracts.dll` and changed the signature of `IQueryEditorTabDataServiceBrokered` methods; brokered-method reflection now adapts to both pre- and post-22.6 contracts so Parse Statistics works on every SSMS 22 build.
 
 ### Requirements
 
@@ -47,7 +48,7 @@ First public release. SSMS 22 extension that parses `STATISTICS IO` / `STATISTIC
 
 ### Install
 
-Download `StatisticsParser.vsix` from the GitHub release, close SSMS, double-click the `.vsix`, and relaunch SSMS. See [README.md](README.md) for full install and uninstall steps.
+See [README.md](README.md#install) for install and uninstall steps. Note that double-clicking the `.vsix` may not work on SSMS 22 — you'll may need the SSMS-bundled `VSIXInstaller.exe`.
 
 ### Known limitations
 

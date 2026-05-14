@@ -308,7 +308,7 @@ Adds a third Unified Settings entry, `statisticsParser.fontSize` (enum `small` /
 
 ---
 
-## Phase 11 — Build & CI
+## Phase 11 — Build & CI — COMPLETED
 
 `appveyor.yml` at the repo root, using a Visual Studio 2022+ image (e.g. `image: Visual Studio 2022`) with the VS 2026 build tools available:
 
@@ -420,5 +420,5 @@ source/
       StatisticsViewBuilder.cs
     Diagnostics/
       StatisticsParserDiagnosticsPane.cs
-.github/workflows/build.yml
+appveyor.yml
 ```
