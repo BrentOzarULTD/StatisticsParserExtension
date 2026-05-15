@@ -1,6 +1,4 @@
-<img src="docs/images/statsparser_logo.png" alt="Statistics Parser logo" width="100" align="left">
-
-# Statistics Parser SSMS Extension
+# <img src="docs/images/statsparser_logo.png" alt="Statistics Parser logo" width="100" align="middle"> &nbsp; Statistics Parser SSMS Extension
 
 [![Build status](https://ci.appveyor.com/api/projects/status/djdbd3q11b06jfcv?svg=true)](https://ci.appveyor.com/project/BrentOzarULTD/statisticsparserextension)
 [![issues badge]][issues]
