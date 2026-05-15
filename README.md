@@ -3,6 +3,11 @@
 # Statistics Parser SSMS Extension
 
 [![Build status](https://ci.appveyor.com/api/projects/status/djdbd3q11b06jfcv?svg=true)](https://ci.appveyor.com/project/BrentOzarULTD/statisticsparserextension)
+[![issues badge]][issues]
+[![contributors_badge]][contributors]
+[![licence badge]][licence]
+[![forks badge]][forks]
+[![stars badge]][stars]
 
 An SSMS 22 extension that parses `STATISTICS IO` / `STATISTICS TIME` output from the Messages tab and renders it as a sortable, readable third tab — **Parse Statistics** — alongside the native Results and Messages tabs.
 
