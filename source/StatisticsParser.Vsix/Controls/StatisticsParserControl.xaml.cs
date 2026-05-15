@@ -32,6 +32,18 @@ namespace StatisticsParser.Vsix.Controls
             name: nameof(ShowAboutCommand),
             ownerType: typeof(StatisticsParserControl));
 
+        public static readonly RoutedUICommand ShowOptionsCommand = new RoutedUICommand(
+            text: "Options",
+            name: nameof(ShowOptionsCommand),
+            ownerType: typeof(StatisticsParserControl));
+
+        // Best-effort page argument handed to the built-in Tools > Options command so the dialog
+        // lands on the Statistics Parser page. The extension uses Unified Settings (registration.json,
+        // category "statisticsParser") and has no DialogPage GUID, so this is the category moniker.
+        // If SSMS 22 does not honor it, cmdidToolsOptions still opens the dialog at its last page —
+        // an acceptable fallback. Adjust this value if SSMS 22 expects a different identifier.
+        private const string StatisticsParserOptionsPageId = "statisticsParser";
+
         private ParseResult _lastParsed;
         // Captured Messages text from the most recent Render call. Held so that an option change
         // affecting parser output (currently only SuppressZeroColumns) can re-parse and refresh
@@ -230,6 +242,29 @@ namespace StatisticsParser.Vsix.Controls
                 new WindowInteropHelper(dlg).Owner = owner;
             }
             dlg.ShowDialog();
+            e.Handled = true;
+        }
+
+        private void OnShowOptionsExecuted(object sender, ExecutedRoutedEventArgs e)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            try
+            {
+                if (Package.GetGlobalService(typeof(SVsUIShell)) is IVsUIShell uiShell)
+                {
+                    // Invoke the built-in Tools > Options command, passing the Statistics Parser
+                    // settings page as the argument so the dialog opens pre-selected on it.
+                    Guid cmdSet = VSConstants.GUID_VSStandardCommandSet97;
+                    object arg = StatisticsParserOptionsPageId;
+                    uiShell.PostExecCommand(ref cmdSet,
+                        (uint)VSConstants.VSStd97CmdID.ToolsOptions, 0, ref arg);
+                }
+            }
+            catch (Exception)
+            {
+                // Opening the Options dialog is non-critical; if the shell rejects the command
+                // there is no host for an error toast here, so swallow like OnCopyAllExecuted.
+            }
             e.Handled = true;
         }
     }
