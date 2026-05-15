@@ -17,6 +17,8 @@
                         CanExecute="OnCopyAllCanExecute" />
         <CommandBinding Command="{x:Static local:StatisticsParserControl.ShowAboutCommand}"
                         Executed="OnShowAboutExecuted" />
+        <CommandBinding Command="{x:Static local:StatisticsParserControl.ShowOptionsCommand}"
+                        Executed="OnShowOptionsExecuted" />
     </UserControl.CommandBindings>
     <UserControl.InputBindings>
         <KeyBinding Modifiers="Ctrl+Shift" Key="C"
@@ -34,6 +36,14 @@
                 </MenuItem.Icon>
             </MenuItem>
             <Separator />
+            <MenuItem Header="Options..."
+                      Command="{x:Static local:StatisticsParserControl.ShowOptionsCommand}"
+                      CommandTarget="{Binding PlacementTarget, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                <MenuItem.Icon>
+                    <imaging:CrispImage Width="16" Height="16"
+                                        Moniker="{x:Static catalog:KnownMonikers.Settings}" />
+                </MenuItem.Icon>
+            </MenuItem>
             <MenuItem Header="About Statistics Parser..."
                       Command="{x:Static local:StatisticsParserControl.ShowAboutCommand}"
                       CommandTarget="{Binding PlacementTarget, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
