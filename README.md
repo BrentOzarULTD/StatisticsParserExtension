@@ -116,3 +116,18 @@ Parsing logic ported from Jorriss's [StatisticsParser](https://github.com/Jorris
     <img src="docs/images/brent_ozar_unlimited_logo_600x360.png" alt="Brent Ozar Unlimited" width="240">
   </a>
 </p>
+
+[issues badge]: https://img.shields.io/github/issues/BrentOzarULTD/StatisticsParserExtension
+[issues]: https://github.com/BrentOzarULTD/StatisticsParserExtension/issues
+
+[contributors_badge]: https://img.shields.io/github/contributors/BrentOzarULTD/StatisticsParserExtension
+[contributors]: https://github.com/BrentOzarULTD/StatisticsParserExtension/graphs/contributors
+
+[licence badge]: https://img.shields.io/github/license/BrentOzarULTD/StatisticsParserExtension
+[licence]: https://github.com/BrentOzarULTD/StatisticsParserExtension/blob/main/LICENSE
+
+[forks badge]: https://img.shields.io/github/forks/BrentOzarULTD/StatisticsParserExtension
+[forks]: https://github.com/BrentOzarULTD/StatisticsParserExtension/network/members
+
+[stars badge]: https://img.shields.io/github/stars/BrentOzarULTD/StatisticsParserExtension
+[stars]: https://github.com/BrentOzarULTD/StatisticsParserExtension/stargazers
